@@ -462,4 +462,26 @@ select pg_temp.godmode();
 select case when (select status from public.reports where id=:'rep3') = 'dismissed'
   then 'PASS: a moderator may resolve a report about themselves' else 'FAIL' end;
 
+\echo '── TEST 24: every court the pickers can offer has a street address ──'
+-- The seed used to name six clubs that do not exist, two of them courts at a
+-- sports centre with no courts. An address is the cheapest check against that
+-- happening again: nobody invents a house number by accident. Member added
+-- courts are exempt, because address is nullable on purpose for them.
+select pg_temp.godmode();
+select case when not exists (
+    select 1 from public.venues
+    where is_active and is_verified and address is null
+  ) then 'PASS: every verified active court has an address'
+  else 'FAIL: a verified court is active with no address' end;
+
+\echo '── TEST 25: the retired courts stay out of the pickers ──'
+select case when not exists (
+    select 1 from public.venues
+    where is_active and name in (
+      'Centro Sportivo Bocconi', 'Padel Milano Sud',
+      'Circolo Tennis Navigli', 'Quanta Sport Village'
+    )
+  ) then 'PASS: no fabricated court is active'
+  else 'FAIL: a fabricated court is still active' end;
+
 \echo 'ALL TESTS COMPLETE'

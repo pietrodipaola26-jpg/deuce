@@ -117,6 +117,7 @@ export async function createVenue(_previous: ActionState, formData: FormData): P
   const parsed = venueSchema.safeParse({
     name: String(formData.get("name") ?? ""),
     area: String(formData.get("area") ?? ""),
+    address: String(formData.get("address") ?? ""),
     travel: String(formData.get("travel") ?? ""),
     surface: String(formData.get("surface") ?? ""),
     indoor: formData.get("indoor") === "on",
@@ -129,6 +130,7 @@ export async function createVenue(_previous: ActionState, formData: FormData): P
   const { error } = await supabase.from("venues").insert({
     name: v.name,
     area: v.area,
+    address: v.address || null,
     travel: v.travel || null,
     surface: v.surface,
     indoor: v.indoor,

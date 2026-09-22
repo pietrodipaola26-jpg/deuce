@@ -21,7 +21,7 @@ const GAME_SELECT = `
   id, host_id, sport, surface, indoor, starts_at, minutes,
   level_min, level_max, spots, taken, price_cents, note, provides,
   status, cancelled_at, cancelled_reason, created_at,
-  venue:venues!inner ( id, name, area, travel, is_verified, indoor, surface ),
+  venue:venues!inner ( id, name, area, address, travel, is_verified, is_active, indoor, surface ),
   players:game_players ( player_id, is_host, attendance,
     profile:profiles!inner ( id, first_name, last_initial, tint, tennis_level, padel_level ) )
 ` as const;
@@ -166,7 +166,7 @@ export async function listVenues() {
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("venues")
-    .select("id, name, area, travel, surface, indoor, is_verified")
+    .select("id, name, area, address, city, country, travel, surface, indoor, is_verified")
     .eq("is_active", true)
     .order("is_verified", { ascending: false })
     .order("name", { ascending: true });

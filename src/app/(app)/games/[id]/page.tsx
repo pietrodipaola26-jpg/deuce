@@ -156,10 +156,24 @@ export default async function GamePage({ params }: { params: Promise<{ id: strin
             </Fact>
             <Fact icon={<PinIcon size={18} />} label="Where">
               <span className="font-medium text-ink">{game.venue.name}</span>, {game.venue.area}
+              {game.venue.address ? (
+                <span className="block text-ink-soft">{game.venue.address}</span>
+              ) : null}
               {game.venue.travel ? (
                 <span className="block text-ink-faint">{game.venue.travel}</span>
               ) : null}
-              {!game.venue.is_verified ? (
+              {/*
+                Order matters. A retired court is also an unverified one, and
+                telling somebody a court "was added by a player" when it was
+                actually withdrawn for not existing is a false statement about
+                how it got there. The stronger, truer warning goes first.
+              */}
+              {!game.venue.is_active ? (
+                <span className="mt-1 block text-xs text-warn">
+                  This court has been withdrawn from Deuce because we could not confirm it exists. Do
+                  not set off without checking with the host first.
+                </span>
+              ) : !game.venue.is_verified ? (
                 <span className="mt-1 block text-xs text-warn">
                   This court was added by a player and has not been confirmed by a moderator. Check it
                   exists before you set off.

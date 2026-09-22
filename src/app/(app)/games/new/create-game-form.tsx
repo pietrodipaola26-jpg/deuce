@@ -495,7 +495,7 @@ function AddVenueForm({ onDone }: { onDone: () => void }) {
               id={`${ids}-name`}
               name="name"
               maxLength={80}
-              placeholder="Tennis Club Lombardo"
+              placeholder="Canottieri Olona 1894"
               className={inputClasses(Boolean(errors.name))}
             />
           </Field>
@@ -504,11 +504,28 @@ function AddVenueForm({ onDone }: { onDone: () => void }) {
               id={`${ids}-area`}
               name="area"
               maxLength={60}
-              placeholder="Porta Romana"
+              placeholder="San Cristoforo"
               className={inputClasses(Boolean(errors.area))}
             />
           </Field>
         </div>
+
+        <Field
+          id={`${ids}-address`}
+          label="Street address"
+          optional
+          className="mt-5"
+          error={errors.address}
+          hint="Optional, and the one thing somebody who has never been cannot work out for themselves."
+        >
+          <input
+            id={`${ids}-address`}
+            name="address"
+            maxLength={160}
+            placeholder="Alzaia Naviglio Grande 146, 20144"
+            className={inputClasses(Boolean(errors.address))}
+          />
+        </Field>
 
         <Field
           id={`${ids}-travel`}
@@ -516,7 +533,7 @@ function AddVenueForm({ onDone }: { onDone: () => void }) {
           optional
           className="mt-5"
           error={errors.travel}
-          hint="The detail people actually ask for. “12 min by tram 24 from Bocconi”."
+          hint="The detail people actually ask for. “2.8 km from campus, about 12 min by bike”."
         >
           <input
             id={`${ids}-travel`}

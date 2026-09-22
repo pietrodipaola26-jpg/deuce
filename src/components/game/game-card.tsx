@@ -125,7 +125,10 @@ export function GameCard({
         <div>
           <p className="font-display text-[1.0625rem] leading-snug font-medium text-ink">
             {game.venue.name}
-            {!game.venue.is_verified ? (
+            {/* Same order as the game page: withdrawn is the truer label. */}
+            {!game.venue.is_active ? (
+              <span className="ml-2 align-middle text-xs font-normal text-warn">withdrawn</span>
+            ) : !game.venue.is_verified ? (
               <span className="ml-2 align-middle text-xs font-normal text-ink-faint">
                 added by a player
               </span>

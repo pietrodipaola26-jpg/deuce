@@ -126,6 +126,11 @@ export const gameSchema = z
 export const venueSchema = z.object({
   name: trimmed(80).min(2, "What is the club called?"),
   area: trimmed(60).min(2, "Which part of Milan?"),
+  // Optional, and it is the field most worth asking for. A member who knows the
+  // club but not the house number must still be able to post the game, because
+  // supply is the constraint on this product, so this cannot be required. When it
+  // is given it has to be long enough to be an address rather than a word.
+  address: trimmed(160).min(4, "That is too short to find.").optional().or(z.literal("")),
   travel: trimmed(120).optional().or(z.literal("")),
   surface: z.enum(["clay", "hard", "padel", "grass"]),
   indoor: z.boolean(),

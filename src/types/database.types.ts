@@ -490,8 +490,10 @@ export type Database = {
       }
       venues: {
         Row: {
+          address: string | null
           area: string
           city: string
+          country: string
           created_at: string
           created_by: string | null
           id: string
@@ -503,8 +505,10 @@ export type Database = {
           travel: string | null
         }
         Insert: {
+          address?: string | null
           area: string
           city?: string
+          country?: string
           created_at?: string
           created_by?: string | null
           id?: string
@@ -516,8 +520,10 @@ export type Database = {
           travel?: string | null
         }
         Update: {
+          address?: string | null
           area?: string
           city?: string
+          country?: string
           created_at?: string
           created_by?: string | null
           id?: string
