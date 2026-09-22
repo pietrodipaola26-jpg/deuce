@@ -30,9 +30,12 @@ const LINKS = [
 export function AppNav({
   person,
   unread,
+  isModerator = false,
 }: {
   person: { first_name: string | null; last_initial: string | null; tint: number };
   unread: number;
+  /** Draws the moderation entry. The page refuses non-moderators by itself. */
+  isModerator?: boolean;
 }) {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
@@ -115,6 +118,14 @@ export function AppNav({
                   <MenuLink href="/settings" onNavigate={() => setOpen(false)}>
                     Settings
                   </MenuLink>
+                  {isModerator ? (
+                    <>
+                      <div className="my-1 h-px bg-hairline" />
+                      <MenuLink href="/moderator" onNavigate={() => setOpen(false)}>
+                        Moderation
+                      </MenuLink>
+                    </>
+                  ) : null}
                   <div className="my-1 h-px bg-hairline" />
                   <form action={signOutAction}>
                     <button

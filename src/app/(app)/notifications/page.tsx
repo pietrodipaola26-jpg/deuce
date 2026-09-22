@@ -5,6 +5,7 @@ import {
   AlertIcon,
   CheckIcon,
   MessageIcon,
+  ShieldIcon,
   StarIcon,
   UsersIcon,
 } from "@/components/brand/icons";
@@ -30,6 +31,9 @@ const ICONS = {
   game_message: <MessageIcon size={17} />,
   game_full: <CheckIcon size={17} />,
   rating_received: <StarIcon size={15} />,
+  report_filed: <ShieldIcon size={17} />,
+  report_resolved: <ShieldIcon size={17} />,
+  moderation_decision: <ShieldIcon size={17} />,
 } as const;
 
 /**

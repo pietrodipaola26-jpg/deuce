@@ -352,4 +352,114 @@ select case
 from (select 1) _ 
 where (select count(*) from public.profiles where id = :'mara') = 0;
 
+\echo '── TEST 19: only a moderator can resolve a report ──'
+select pg_temp.godmode();
+update public.profiles set is_moderator = true where id = :'yuki';
+select set_config('deuce.yuki', :'yuki', false), set_config('deuce.luca', :'luca', false);
+
+select pg_temp.become(:'luca');
+insert into public.reports (reporter_id, subject_id, reason, detail)
+values (:'luca', :'prof', 'conduct', 'Rude for the whole hour.')
+returning id as rep \gset
+select set_config('deuce.rep', :'rep', false);
+
+-- The reporter is told it arrived; the subject is told nothing yet.
+select pg_temp.godmode();
+select case
+  when (select count(*) from public.notifications where user_id=:'luca' and kind='report_filed') = 1
+   and (select count(*) from public.notifications where user_id=:'prof') = 0
+  then 'PASS: reporter confirmed, subject kept in the dark'
+  else 'FAIL' end;
+
+-- A non-moderator cannot resolve it.
+select pg_temp.become(:'mara');
+do $$
+begin
+  perform public.resolve_report(current_setting('deuce.rep')::uuid, 'ban', 'because');
+  raise exception 'FAIL: a member resolved a report';
+exception
+  when insufficient_privilege then raise notice 'PASS: only a moderator may resolve';
+end $$;
+
+\echo '── TEST 20: a dismissal tells the reporter and nobody else ──'
+select pg_temp.become(:'yuki');   -- the moderator
+select public.resolve_report(:'rep', 'dismissed', 'Nothing here breaks a rule.');
+select pg_temp.godmode();
+select case
+  when (select status from public.reports where id=:'rep') = 'dismissed'
+   and (select outcome from public.reports where id=:'rep') is null
+   and (select count(*) from public.notifications where user_id=:'luca' and kind='report_resolved') = 1
+   and (select count(*) from public.notifications where user_id=:'prof') = 0
+  then 'PASS: dismissed quietly, reporter told'
+  else 'FAIL' end;
+
+\echo '── TEST 21: a ban is total, and the account keeps its record ──'
+select pg_temp.become(:'luca');
+insert into public.reports (reporter_id, subject_id, reason, detail)
+values (:'luca', :'prof', 'safety', 'Followed me to the tram.')
+returning id as rep2 \gset
+select set_config('deuce.rep2', :'rep2', false);
+
+select pg_temp.become(:'yuki');
+select public.resolve_report(:'rep2', 'ban', 'Following another player after a game.');
+
+select pg_temp.godmode();
+select case
+  when (select banned_at from public.profiles where id=:'prof') is not null
+   and (select count(*) from public.notifications where user_id=:'prof' and kind='moderation_decision') = 1
+   and (select count(*) from public.profiles where id=:'prof') = 1
+  then 'PASS: banned, told, and the row survives'
+  else 'FAIL' end;
+
+-- The banned account can now see nothing and do nothing.
+select pg_temp.become(:'prof');
+select case
+  when (select count(*) from public.games) = 0
+   and (select count(*) from public.profiles where id <> auth.uid()) = 0
+   and public.is_member() = false
+  then 'PASS: a ban closes the whole product'
+  else 'FAIL: a banned account can still read' end;
+
+do $$
+begin
+  perform public.join_game(current_setting('deuce.g2')::uuid);
+  raise exception 'FAIL: a banned account joined a game';
+exception
+  when others then raise notice 'PASS: a banned account cannot join';
+end $$;
+
+\echo '── TEST 22: a report cannot be resolved twice ──'
+select pg_temp.become(:'yuki');
+do $$
+begin
+  perform public.resolve_report(current_setting('deuce.rep2')::uuid, 'warning', 'again');
+  raise exception 'FAIL: resolved the same report twice';
+exception
+  when check_violation then raise notice 'PASS: a resolved report stays resolved';
+end $$;
+
+\echo '── TEST 23: a reason is required, and a moderator may judge a report about themselves ──'
+-- Deliberately a report ABOUT the moderator. With a single moderator the only
+-- alternative is a report nobody can ever close, so it is allowed and recorded
+-- under their name; the page says so on the card.
+select pg_temp.become(:'luca');
+insert into public.reports (reporter_id, subject_id, reason)
+values (:'luca', :'yuki', 'spam')
+returning id as rep3 \gset
+select set_config('deuce.rep3', :'rep3', false);
+
+select pg_temp.become(:'yuki');
+do $$
+begin
+  perform public.resolve_report(current_setting('deuce.rep3')::uuid, 'warning', '   ');
+  raise exception 'FAIL: resolved with no reason';
+exception
+  when check_violation then raise notice 'PASS: a reason is required';
+end $$;
+
+select public.resolve_report(:'rep3', 'dismissed', 'Reviewed by the person it names.');
+select pg_temp.godmode();
+select case when (select status from public.reports where id=:'rep3') = 'dismissed'
+  then 'PASS: a moderator may resolve a report about themselves' else 'FAIL' end;
+
 \echo 'ALL TESTS COMPLETE'

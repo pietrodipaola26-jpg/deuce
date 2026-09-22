@@ -17,7 +17,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
 
   return (
     <div className="flex min-h-dvh flex-col">
-      <AppNav person={profile} unread={unread} />
+      <AppNav person={profile} unread={unread} isModerator={profile.is_moderator} />
       <main id="main" className="flex-1 pb-20">
         {children}
       </main>

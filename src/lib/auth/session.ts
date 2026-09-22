@@ -58,9 +58,26 @@ export async function requireMember(): Promise<{ userId: string; profile: Profil
     // something is genuinely wrong rather than merely incomplete.
     redirect("/login?error=no_profile");
   }
+
+  /**
+   * A banned account is checked BEFORE onboarding.
+   *
+   * `is_member()` already refuses a banned account every row in the database, so
+   * without this they would reach the feed and find an empty product with no
+   * explanation, which looks like a bug rather than a decision. They are sent to
+   * a page that tells them what happened and why.
+   */
+  if (profile.banned_at) redirect("/closed");
+
   if (!profile.onboarded_at) redirect("/onboarding");
 
   return { userId: user.id, profile };
+}
+
+/** True only for the moderator, used to decide whether to draw the menu item. */
+export async function isModerator(): Promise<boolean> {
+  const profile = await getProfile();
+  return Boolean(profile?.is_moderator && !profile.banned_at);
 }
 
 export async function signOut() {

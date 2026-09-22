@@ -267,6 +267,8 @@ export type Database = {
       profiles: {
         Row: {
           age_confirmed_at: string | null
+          banned_at: string | null
+          banned_reason: string | null
           bio: string | null
           created_at: string
           first_name: string | null
@@ -285,6 +287,8 @@ export type Database = {
         }
         Insert: {
           age_confirmed_at?: string | null
+          banned_at?: string | null
+          banned_reason?: string | null
           bio?: string | null
           created_at?: string
           first_name?: string | null
@@ -303,6 +307,8 @@ export type Database = {
         }
         Update: {
           age_confirmed_at?: string | null
+          banned_at?: string | null
+          banned_reason?: string | null
           bio?: string | null
           created_at?: string
           first_name?: string | null
@@ -390,8 +396,10 @@ export type Database = {
           detail: string | null
           game_id: string | null
           id: string
+          outcome: Database["public"]["Enums"]["report_outcome"] | null
           reason: Database["public"]["Enums"]["report_reason"]
           reporter_id: string
+          resolution_note: string | null
           resolved_at: string | null
           resolved_by: string | null
           status: Database["public"]["Enums"]["report_status"]
@@ -402,8 +410,10 @@ export type Database = {
           detail?: string | null
           game_id?: string | null
           id?: string
+          outcome?: Database["public"]["Enums"]["report_outcome"] | null
           reason: Database["public"]["Enums"]["report_reason"]
           reporter_id: string
+          resolution_note?: string | null
           resolved_at?: string | null
           resolved_by?: string | null
           status?: Database["public"]["Enums"]["report_status"]
@@ -414,8 +424,10 @@ export type Database = {
           detail?: string | null
           game_id?: string | null
           id?: string
+          outcome?: Database["public"]["Enums"]["report_outcome"] | null
           reason?: Database["public"]["Enums"]["report_reason"]
           reporter_id?: string
+          resolution_note?: string | null
           resolved_at?: string | null
           resolved_by?: string | null
           status?: Database["public"]["Enums"]["report_status"]
@@ -592,6 +604,10 @@ export type Database = {
         }
         Returns: undefined
       }
+      resolve_report: {
+        Args: { p_note: string; p_outcome: string; p_report_id: string }
+        Returns: undefined
+      }
     }
     Enums: {
       attendance: "unknown" | "played" | "no_show"
@@ -604,6 +620,10 @@ export type Database = {
         | "game_message"
         | "game_full"
         | "rating_received"
+        | "report_filed"
+        | "report_resolved"
+        | "moderation_decision"
+      report_outcome: "warning" | "ban"
       report_reason: "no_show" | "conduct" | "safety" | "spam" | "other"
       report_status: "open" | "actioned" | "dismissed"
       sport: "tennis" | "padel"
@@ -745,7 +765,11 @@ export const Constants = {
         "game_message",
         "game_full",
         "rating_received",
+        "report_filed",
+        "report_resolved",
+        "moderation_decision",
       ],
+      report_outcome: ["warning", "ban"],
       report_reason: ["no_show", "conduct", "safety", "spam", "other"],
       report_status: ["open", "actioned", "dismissed"],
       sport: ["tennis", "padel"],

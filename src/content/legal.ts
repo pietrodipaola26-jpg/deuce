@@ -121,14 +121,16 @@ export const LEGAL_DOCS: LegalDoc[] = [
         body: [
           "Report a player from the game itself. It takes two taps and it goes to a student moderator.",
           "Reports are treated seriously and confidentially. A report only appears as a number on somebody's public profile once a moderator has agreed with it, which is what stops reporting being used as a weapon.",
-          "Repeated substantiated reports end an account. Anything that looks like a threat to somebody's safety is escalated immediately, and where it is a matter for the police we will say so and help you take it there.",
+          "A moderator can close an account outright, and will for anything serious rather than waiting for it to happen twice. Where something is a matter for the police we will say so and help you take it there.",
         ],
       },
       {
-        heading: "What happens if you break these",
+        heading: "What happens after a report",
         body: [
-          "In order: a warning, a suspension, and removal. Serious conduct skips straight to removal.",
-          "We will tell you what rule was broken and what we did about it. If you think we got it wrong, reply to that message and a different moderator will look at it.",
+          "A student moderator reads it and decides one of three things. A warning, which is recorded on the account and counts on its public profile. A ban, which closes the account immediately and completely. Or a dismissal, when there is no breach of these rules or not enough to go on.",
+          "Every decision carries a written reason, and that reason is sent to the people involved rather than kept in a file. If you are warned or banned you are told which rule and why, in a moderator's own words.",
+          "A dismissed report leaves no mark, and the person it was about is never told it existed. That is deliberate: a game has two to four people in it, so telling somebody they were reported would effectively name whoever reported them.",
+          "If you think a decision is wrong, reply to the message it arrived in. Where there is more than one moderator, a different one will look at it.",
         ],
       },
     ],
