@@ -47,7 +47,7 @@ export function SignInForm({
   const looksEligible = email.trim() !== "" && isEligibleEmail(email);
   const sentTo = state.sent ? (state.email ?? email) : null;
 
-  // ── After the link has been sent. ────────────────────────────────────────
+  // ── After the code has been sent. ────────────────────────────────────────
   if (sentTo) {
     return (
       <Card className="p-6 sm:p-8">
@@ -59,56 +59,69 @@ export function SignInForm({
           Check your Bocconi inbox
         </h2>
         <p className="mt-2.5 text-[0.9375rem] leading-relaxed text-ink-soft">
-          We sent a link to <span className="font-medium text-ink">{sentTo}</span>. Open it on
-          this device and you are in. There is no password to set.
+          We sent a six digit code to <span className="font-medium text-ink">{sentTo}</span>. Type it
+          below and you are in. There is no password to set.
         </p>
 
-        <div className="mt-7 border-t border-hairline pt-6">
-          <p className="text-sm leading-relaxed text-ink-soft">
-            The same email has a code you can type, if the link will not open.
-          </p>
-
-          <form action={codeAction} className="mt-4">
-            <input type="hidden" name="email" value={sentTo} />
-            <input type="hidden" name="next" value={next} />
-
-            <Field id={codeId} label="Your code" error={codeState.error ?? undefined}>
-              <input
-                id={codeId}
-                name="code"
-                inputMode="numeric"
-                autoComplete="one-time-code"
-                maxLength={6}
-                placeholder="123456"
-                className={inputClasses(Boolean(codeState.error), "num tracking-[0.3em]")}
-              />
-            </Field>
-
-            <button
-              type="submit"
-              disabled={codePending}
-              className={buttonClasses("secondary", "lg", "mt-4 w-full")}
-            >
-              {codePending ? "Checking…" : "Sign in with the code"}
-            </button>
-          </form>
-        </div>
-
-        <form action={action} className="mt-6 border-t border-hairline pt-6">
+        {/*
+          The code is the whole flow, not a fallback.
+          It is typed into the tab that asked for it, so it works when the mail
+          app opens things in its own browser, it survives clients that rewrite
+          links, and no link scanner can spend it before the person does.
+        */}
+        <form action={codeAction} className="mt-7">
           <input type="hidden" name="email" value={sentTo} />
           <input type="hidden" name="next" value={next} />
-          <p className="text-xs leading-relaxed text-ink-faint">
-            Nothing after a minute or two? Check the spam folder, then{" "}
-            <button
-              type="submit"
-              disabled={pending}
-              className="rounded font-medium text-court-text underline underline-offset-4 disabled:opacity-60"
-            >
-              send another link
-            </button>
-            .
-          </p>
+
+          <Field
+            id={codeId}
+            label="Your code"
+            error={codeState.error ?? undefined}
+            hint="Six digits, from the email that just arrived."
+          >
+            <input
+              id={codeId}
+              name="code"
+              inputMode="numeric"
+              autoComplete="one-time-code"
+              autoFocus
+              maxLength={6}
+              placeholder="123456"
+              aria-invalid={codeState.error ? true : undefined}
+              className={inputClasses(
+                Boolean(codeState.error),
+                "num text-center text-2xl tracking-[0.4em]",
+              )}
+            />
+          </Field>
+
+          <button
+            type="submit"
+            disabled={codePending}
+            className={buttonClasses("primary", "lg", "mt-5 w-full")}
+          >
+            {codePending ? "Checking…" : "Sign in"}
+            {codePending ? null : <ArrowRightIcon size={17} />}
+          </button>
         </form>
+
+        <div className="mt-6 border-t border-hairline pt-5">
+          <form action={action}>
+            <input type="hidden" name="email" value={sentTo} />
+            <input type="hidden" name="next" value={next} />
+            <p className="text-xs leading-relaxed text-ink-faint">
+              Nothing after a minute or two? Check the spam folder, then{" "}
+              <button
+                type="submit"
+                disabled={pending}
+                className="rounded font-medium text-court-text underline underline-offset-4 disabled:opacity-60"
+              >
+                send a new code
+              </button>
+              . The old one stops working as soon as a new one is sent.
+            </p>
+          </form>
+        </div>
       </Card>
     );
   }
@@ -125,7 +138,7 @@ export function SignInForm({
         <p className="mt-2.5 text-[0.9375rem] leading-relaxed text-ink-soft">
           {mode === "signup"
             ? "It is the whole of the check. Deuce is Bocconi only, and this is what makes everyone on it a fellow student rather than a stranger from the internet."
-            : "We will send you a link. There is no password on Deuce. Controlling your Bocconi mailbox is how we know it is you."}
+            : "We will send you a six digit code. There is no password on Deuce. Controlling your Bocconi mailbox is how we know it is you."}
         </p>
 
         <input type="hidden" name="next" value={next} />
@@ -175,7 +188,7 @@ export function SignInForm({
           disabled={pending}
           className={buttonClasses("primary", "lg", "mt-7 w-full")}
         >
-          {pending ? "Sending your link…" : mode === "signup" ? "Create my account" : "Send me a link"}
+          {pending ? "Sending your code…" : mode === "signup" ? "Create my account" : "Send me a code"}
           {pending ? null : <ArrowRightIcon size={17} />}
         </button>
 

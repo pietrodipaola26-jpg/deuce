@@ -86,6 +86,16 @@ max_frequency = "5s"
 otp_length = 6
 otp_expiry = 3600
 
+# Local copies of the production templates, so a local sign in exercises the
+# same code flow rather than a link the dashboard no longer sends.
+[auth.email.template.magic_link]
+subject = "Your Deuce sign in code"
+content_path = "./supabase/templates/magic-link.html"
+
+[auth.email.template.confirmation]
+subject = "Your Deuce sign in code"
+content_path = "./supabase/templates/confirmation.html"
+
 [auth.sms]
 enable_signup = false
 enable_confirmations = false

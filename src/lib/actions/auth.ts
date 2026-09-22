@@ -12,9 +12,22 @@ import { createClient } from "@/lib/supabase/server";
 /**
  * SIGNING IN.
  *
- * There are no passwords in Deuce. Sign-in is a link (or a six-digit code) sent
- * to a Bocconi mailbox, and that is not a shortcut — it IS the verification the
- * whole product rests on. A password would let somebody keep an account after
+ * There are no passwords in Deuce. Signing in means receiving a six digit code
+ * at a Bocconi mailbox and typing it back, and that is not a shortcut: it IS the
+ * verification the whole product rests on.
+ *
+ * WHY A CODE AND NOT A LINK. A magic link has to be opened in the same browser
+ * that asked for it, because the session it creates is tied to a cookie set at
+ * the moment of the request. On a phone, where mail apps open links in their own
+ * in-app browser, that is frequently a different browser, and the link then
+ * lands on a sign in page as if nothing happened. Mail clients also rewrite and
+ * pre-fetch links, which can silently consume a one time token before the person
+ * ever taps it.
+ *
+ * A code has none of those failure modes. It is read by a human and typed into
+ * the tab that is already open and already holds the request, so it works across
+ * devices, survives any mail client, and cannot be spent by a scanner. The
+ * security is identical: both prove control of the mailbox. A password would let somebody keep an account after
  * they lose access to the mailbox that proved they belong here, which is exactly
  * the property Deuce must not have. It also means there is no password to
  * breach, reset, or reuse from another site.
@@ -69,6 +82,14 @@ export async function requestSignInLink(
     callback.searchParams.set("next", next);
   }
 
+  /**
+   * `emailRedirectTo` is still supplied even though the email now shows a code.
+   *
+   * Supabase mints both a numeric token and a link token from the same request;
+   * which of them the message displays is decided by the email template. Leaving
+   * the redirect configured means a link still resolves correctly if the
+   * template is ever changed back, rather than pointing nowhere.
+   */
   const { error } = await supabase.auth.signInWithOtp({
     email,
     options: { emailRedirectTo: callback.toString(), shouldCreateUser: true },
@@ -110,10 +131,28 @@ export async function verifyCode(_previous: AuthState, formData: FormData): Prom
   }
 
   const supabase = await createClient();
-  const { error } = await supabase.auth.verifyOtp({ email, token, type: "email" });
+
+  /**
+   * Two token types, tried in order.
+   *
+   * Supabase labels the code it sends differently depending on whether the
+   * address already had an account: a returning member's code verifies as
+   * "email", a brand new one as "signup". The person typing it cannot know which
+   * they are, and getting it wrong reads to them as "the code is wrong". So both
+   * are attempted before anything is reported as a failure.
+   */
+  let error = (await supabase.auth.verifyOtp({ email, token, type: "email" })).error;
+  if (error) {
+    error = (await supabase.auth.verifyOtp({ email, token, type: "signup" })).error;
+  }
 
   if (error) {
-    return { error: "That code is wrong or has expired. Ask for a new one.", email, sent: true };
+    console.error("[auth] code verification failed", { email, message: error.message });
+    return {
+      error: "That code is wrong or has expired. Ask for a new one below.",
+      email,
+      sent: true,
+    };
   }
 
   // Only ever a path on this site — an absolute URL here would make the sign-in
