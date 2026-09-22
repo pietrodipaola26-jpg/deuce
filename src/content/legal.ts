@@ -152,6 +152,8 @@ export const LEGAL_DOCS: LegalDoc[] = [
           "Your Bocconi email address. This is the only way Deuce knows you belong here, and it is the only contact detail we hold. It is never shown to another player.",
           "Your first name, your surname initial, your level, the sports you play, and optionally your languages, programme, year and a short bio. All of this is visible to other members, because it is what somebody needs in order to decide about one game.",
           "Your activity: the games you host and join, the messages you write in game threads, the ratings you give, and the attendance marks hosts record about you.",
+          "Reports, if you send one or if one is sent about you: what was reported, anything the reporter wrote, and the decision a moderator reached with the reason they gave for it.",
+          "If an account is closed by a moderator, the date and the written reason, kept on that account.",
           "Nothing else. No photograph, no surname, no phone number, no student number, no timetable, no course codes, no location tracking, no advertising identifiers, and no analytics or tracking cookies from anybody else.",
         ],
       },
@@ -162,6 +164,9 @@ export const LEGAL_DOCS: LegalDoc[] = [
           "Members do not see your email address, your individual ratings, or who rated you. You cannot see who rated you either, only your average. That is what makes the average worth anything.",
           "People who are not signed in see nothing at all. This is enforced by row level security in the database, not by leaving pages unlinked: a request from somebody with no account returns no rows.",
           "A game thread is readable only by the players in that game.",
+          "Student moderators are the one exception, and only for reports. A moderator reads reports sent to them, which means the name of the person reported, the name of the person reporting, the game it happened in, and anything either wrote about it. They do not read game threads, and they have no access to anything else you could not already show a fellow member.",
+          "Who moderates is not published, and a decision is never signed. A report tells you it was reviewed by a moderator, never by which one.",
+          "If a moderator upholds a report about you, you are told which rule and why. If a moderator dismisses it, you are told nothing at all, and you are never told who reported you.",
         ],
       },
       {
@@ -177,7 +182,8 @@ export const LEGAL_DOCS: LegalDoc[] = [
         body: [
           "Your profile and activity for as long as you have an account.",
           "When you delete your account, it goes immediately and completely: your profile, your seats in games, the messages you wrote, the ratings you gave, and your notifications. This is a real delete, not a flag that hides you.",
-          "Moderation records about upheld reports are kept in a form that no longer identifies you, because a safety record that vanishes when the account does is not a safety record.",
+          "Reports and the decisions made on them are kept while the accounts involved exist, because a moderator judging a new report needs to know whether there were earlier ones.",
+          "A closed account keeps its profile row rather than being erased, so that the record of games other people played with it survives and so that the decision can be reviewed. Deleting your own account from Settings still removes everything, as described above.",
         ],
       },
       {
