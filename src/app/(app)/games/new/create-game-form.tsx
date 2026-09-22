@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useId, useMemo, useState } from "react";
+import { useActionState, useId, useMemo, useRef, useState } from "react";
 
 import { ArrowRightIcon, IndoorIcon, PadelIcon, SunIcon, TennisIcon } from "@/components/brand/icons";
 import { LevelMeter } from "@/components/game/level-meter";
@@ -10,6 +10,7 @@ import { Field, FormError, inputClasses, textareaClasses } from "@/components/ui
 import { createGame, createVenue, type ActionState } from "@/lib/actions/games";
 import type { Venue } from "@/lib/data/games";
 import { LEVELS, sportLabel, sportsPlayed, type SportId, type SportLevels } from "@/lib/game/level";
+import { roofForGame, roofLabel } from "@/lib/game/roof";
 import { cn } from "@/lib/cn";
 
 /**
@@ -74,6 +75,17 @@ export function CreateGameForm({
   const ids = useId();
   const errors = state.errors ?? {};
 
+  /**
+   * The start date, read rather than held in state.
+   *
+   * Whether a court has a roof over it depends on the month: most Milan clay
+   * clubs are domed from October to April. So picking a court has to know which
+   * day the host chose, and changing the day has to revisit the roof. A ref does
+   * that without making this input controlled, which is what broke it the last
+   * time React 19 reset the form after an action.
+   */
+  const whenRef = useRef<HTMLInputElement>(null);
+
   /** Only courts whose surface can host the chosen sport. */
   const eligibleVenues = useMemo(
     () =>
@@ -104,11 +116,18 @@ export function CreateGameForm({
     setVenueId(id);
     const v = venues.find((x) => x.id === id);
     if (v) {
-      // The court knows its own surface and whether it has a roof. Copying them
-      // saves two questions and removes the commonest way to post a wrong game.
+      // The court knows its own surface, and the court plus the date knows the
+      // roof. Copying both saves two questions and removes the commonest way to
+      // post a wrong game. The host can still override the roof below.
       setSurface(v.surface);
-      setIndoor(v.indoor);
+      setIndoor(roofForGame(v, whenRef.current?.value));
     }
+  }
+
+  /** A court domed only in winter changes answer when the host changes the day. */
+  function chooseWhen(value: string) {
+    const v = venues.find((x) => x.id === venueId);
+    if (v) setIndoor(roofForGame(v, value));
   }
 
   if (addingVenue) {
@@ -215,7 +234,7 @@ export function CreateGameForm({
             id={`${ids}-venue`}
             label="Which court?"
             error={errors.venueId}
-            hint="Pick the club. The surface and whether it is indoors come with it."
+            hint="Pick the club. The surface and the roof come with it, worked out for the day you chose."
           >
             <select
               id={`${ids}-venue`}
@@ -226,7 +245,7 @@ export function CreateGameForm({
               <option value="">Choose a court…</option>
               {eligibleVenues.map((v) => (
                 <option key={v.id} value={v.id}>
-                  {v.name} · {v.area} · {v.indoor ? "indoor" : "outdoor"}
+                  {v.name} · {v.area} · {roofLabel(v)}
                   {v.is_verified ? "" : " (added by a player)"}
                 </option>
               ))}
@@ -276,9 +295,11 @@ export function CreateGameForm({
             >
               <input
                 id={`${ids}-when`}
+                ref={whenRef}
                 name="startsAt"
                 type="datetime-local"
                 defaultValue={defaultStart}
+                onChange={(e) => chooseWhen(e.target.value)}
                 className={inputClasses(Boolean(errors.startsAt))}
               />
             </Field>
@@ -557,16 +578,40 @@ function AddVenueForm({ onDone }: { onDone: () => void }) {
               <option value="grass">Grass</option>
             </select>
           </Field>
-          <div className="flex items-end">
-            <label className="flex cursor-pointer items-center gap-2.5 pb-3 text-sm text-ink-soft">
-              <input
-                type="checkbox"
-                name="indoor"
-                className="h-[18px] w-[18px] accent-[var(--color-court)]"
-              />
-              This court is indoors
-            </label>
-          </div>
+          <fieldset>
+            <legend className="text-sm font-medium text-ink">Is it covered?</legend>
+            <p className="mt-1 text-sm text-ink-faint">
+              Most Milan clay clubs go under a dome from October to April.
+            </p>
+            <div className="mt-3 flex flex-col gap-2">
+              {(
+                [
+                  { id: "indoor", label: "Indoors all year" },
+                  { id: "winter", label: "Outdoors, covered in winter" },
+                  { id: "open", label: "Outdoors all year" },
+                ] as const
+              ).map((r) => (
+                <label
+                  key={r.id}
+                  className="flex cursor-pointer items-center gap-2.5 text-sm text-ink-soft"
+                >
+                  <input
+                    type="radio"
+                    name="roof"
+                    value={r.id}
+                    defaultChecked={r.id === "indoor"}
+                    className="h-[18px] w-[18px] accent-[var(--color-court)]"
+                  />
+                  {r.label}
+                </label>
+              ))}
+            </div>
+            {errors.roof ? (
+              <p role="alert" className="mt-2 text-sm text-danger">
+                {errors.roof}
+              </p>
+            ) : null}
+          </fieldset>
         </div>
 
         <div className="mt-6 flex gap-3">

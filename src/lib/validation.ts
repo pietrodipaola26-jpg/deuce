@@ -133,7 +133,12 @@ export const venueSchema = z.object({
   address: trimmed(160).min(4, "That is too short to find.").optional().or(z.literal("")),
   travel: trimmed(120).optional().or(z.literal("")),
   surface: z.enum(["clay", "hard", "padel", "grass"]),
-  indoor: z.boolean(),
+  /**
+   * One choice, not two booleans. venues.indoor and venues.covered_in_winter
+   * cannot both be true and the database has a check constraint saying so, so
+   * the form is not given a way to say it. See src/lib/game/roof.ts.
+   */
+  roof: z.enum(["indoor", "winter", "open"], { message: "Is it covered?" }),
 });
 
 export const messageSchema = z.object({

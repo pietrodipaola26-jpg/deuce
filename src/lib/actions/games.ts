@@ -120,7 +120,7 @@ export async function createVenue(_previous: ActionState, formData: FormData): P
     address: String(formData.get("address") ?? ""),
     travel: String(formData.get("travel") ?? ""),
     surface: String(formData.get("surface") ?? ""),
-    indoor: formData.get("indoor") === "on",
+    roof: String(formData.get("roof") ?? ""),
   });
 
   if (!parsed.success) return { errors: fieldErrors(parsed.error) };
@@ -133,7 +133,9 @@ export async function createVenue(_previous: ActionState, formData: FormData): P
     address: v.address || null,
     travel: v.travel || null,
     surface: v.surface,
-    indoor: v.indoor,
+    // Derived from the single choice, which is why they can never contradict.
+    indoor: v.roof === "indoor",
+    covered_in_winter: v.roof === "winter",
     created_by: userId,
     // Never trusted from the client: the RLS policy also requires false.
     is_verified: false,

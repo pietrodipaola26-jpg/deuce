@@ -166,7 +166,7 @@ export async function listVenues() {
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("venues")
-    .select("id, name, area, address, city, country, travel, surface, indoor, is_verified")
+    .select("id, name, area, address, city, country, travel, surface, indoor, covered_in_winter, is_verified")
     .eq("is_active", true)
     .order("is_verified", { ascending: false })
     .order("name", { ascending: true });

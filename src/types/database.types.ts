@@ -494,6 +494,7 @@ export type Database = {
           area: string
           city: string
           country: string
+          covered_in_winter: boolean
           created_at: string
           created_by: string | null
           id: string
@@ -509,6 +510,7 @@ export type Database = {
           area: string
           city?: string
           country?: string
+          covered_in_winter?: boolean
           created_at?: string
           created_by?: string | null
           id?: string
@@ -524,6 +526,7 @@ export type Database = {
           area?: string
           city?: string
           country?: string
+          covered_in_winter?: boolean
           created_at?: string
           created_by?: string | null
           id?: string

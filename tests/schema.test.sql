@@ -484,4 +484,26 @@ select case when not exists (
   ) then 'PASS: no fabricated court is active'
   else 'FAIL: a fabricated court is still active' end;
 
+\echo '── TEST 26: a court cannot be permanently roofed AND domed for the winter ──'
+-- indoor and covered_in_winter answer different questions and are mutually
+-- exclusive. The add-a-court form offers one choice of three so it cannot say
+-- both, but the form is not the thing that has to be right. See 00010.
+do $$
+begin
+  insert into public.venues (name, area, surface, indoor, covered_in_winter)
+  values ('Contradiction Tennis Club', 'Nowhere', 'clay', true, true);
+  raise exception 'FAIL: a court claimed two kinds of roof';
+exception
+  when check_violation then raise notice 'PASS: a court has one kind of roof';
+end $$;
+
+\echo '── TEST 27: both sports have courts to play on ──'
+-- A feed with no courts for one sport is a product that silently offers only the
+-- other. Padel needs a padel surface; tennis needs anything but.
+select case
+  when (select count(*) from public.venues where is_active and surface = 'padel') > 0
+   and (select count(*) from public.venues where is_active and surface <> 'padel') > 0
+  then 'PASS: both sports have active courts'
+  else 'FAIL: one sport has nowhere to play' end;
+
 \echo 'ALL TESTS COMPLETE'
