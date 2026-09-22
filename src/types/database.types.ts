@@ -279,6 +279,7 @@ export type Database = {
           onboarded_at: string | null
           padel_level: number | null
           programme: string | null
+          reports_seen_at: string | null
           study_year: string | null
           tennis_level: number | null
           terms_accepted_at: string | null
@@ -299,6 +300,7 @@ export type Database = {
           onboarded_at?: string | null
           padel_level?: number | null
           programme?: string | null
+          reports_seen_at?: string | null
           study_year?: string | null
           tennis_level?: number | null
           terms_accepted_at?: string | null
@@ -319,6 +321,7 @@ export type Database = {
           onboarded_at?: string | null
           padel_level?: number | null
           programme?: string | null
+          reports_seen_at?: string | null
           study_year?: string | null
           tennis_level?: number | null
           terms_accepted_at?: string | null
@@ -595,6 +598,7 @@ export type Database = {
         }
         Returns: undefined
       }
+      mark_reports_seen: { Args: never; Returns: undefined }
       rate_player: {
         Args: {
           p_game_id: string
@@ -608,6 +612,7 @@ export type Database = {
         Args: { p_note: string; p_outcome: string; p_report_id: string }
         Returns: undefined
       }
+      unseen_report_count: { Args: never; Returns: number }
     }
     Enums: {
       attendance: "unknown" | "played" | "no_show"

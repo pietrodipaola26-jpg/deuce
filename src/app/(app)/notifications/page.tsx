@@ -9,10 +9,10 @@ import {
   StarIcon,
   UsersIcon,
 } from "@/components/brand/icons";
-import { Button } from "@/components/ui/button";
 import { Card, Eyebrow } from "@/components/ui/pieces";
 import { EmptyState } from "@/components/ui/field";
 import { buttonClasses } from "@/components/ui/button";
+import { MarkSeenOnOpen } from "@/components/app/mark-seen";
 import { markNotificationsRead } from "@/lib/actions/games";
 import { requireMember } from "@/lib/auth/session";
 import { listNotifications } from "@/lib/data/players";
@@ -48,11 +48,13 @@ const ICONS = {
  */
 export default async function NotificationsPage() {
   const { userId } = await requireMember();
+  // Fetched BEFORE the badge is cleared, so anything that was new is still
+  // drawn as new on the very visit that marks it read.
   const notifications = await listNotifications(userId);
-  const unread = notifications.filter((n) => !n.read_at).length;
 
   return (
     <div className="mx-auto max-w-2xl px-5 py-10 sm:px-8">
+      <MarkSeenOnOpen action={markNotificationsRead} />
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
           <Eyebrow>Alerts</Eyebrow>
@@ -60,13 +62,8 @@ export default async function NotificationsPage() {
             What happened while you were out.
           </h1>
         </div>
-        {unread > 0 ? (
-          <form action={markNotificationsRead}>
-            <Button weight="secondary" size="md" type="submit">
-              Mark all as read
-            </Button>
-          </form>
-        ) : null}
+        {/* No "mark all as read" button: opening the page does it. A control
+            that repeats what arriving already did is one more thing to explain. */}
       </div>
 
       {notifications.length === 0 ? (

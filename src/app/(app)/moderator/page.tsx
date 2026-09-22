@@ -5,6 +5,8 @@ import { ReportCard } from "./report-card";
 import { ShieldIcon } from "@/components/brand/icons";
 import { Card, Eyebrow, Rule } from "@/components/ui/pieces";
 import { EmptyState } from "@/components/ui/field";
+import { MarkSeenOnOpen } from "@/components/app/mark-seen";
+import { markReportsSeen } from "@/lib/actions/moderation";
 import { requireMember } from "@/lib/auth/session";
 import { listReports, statsForReports } from "@/lib/data/moderation";
 
@@ -40,6 +42,7 @@ export default async function ModeratorPage() {
 
   return (
     <div className="mx-auto max-w-3xl px-5 py-10 sm:px-8">
+      <MarkSeenOnOpen action={markReportsSeen} />
       <Eyebrow>Moderation</Eyebrow>
       <h1 className="mt-3 font-display text-[2rem] leading-tight font-semibold tracking-[-0.03em] text-ink">
         {open.length === 0

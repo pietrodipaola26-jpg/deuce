@@ -1,6 +1,6 @@
 import { AppNav } from "@/components/app/app-nav";
 import { requireMember } from "@/lib/auth/session";
-import { countUnreadNotifications } from "@/lib/data/players";
+import { countUnreadNotifications, countUnseenReports } from "@/lib/data/players";
 
 /**
  * The member area.
@@ -13,11 +13,19 @@ import { countUnreadNotifications } from "@/lib/data/players";
  */
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   const { userId, profile } = await requireMember();
-  const unread = await countUnreadNotifications(userId);
+  const [unread, unseenReports] = await Promise.all([
+    countUnreadNotifications(userId),
+    countUnseenReports(),
+  ]);
 
   return (
     <div className="flex min-h-dvh flex-col">
-      <AppNav person={profile} unread={unread} isModerator={profile.is_moderator} />
+      <AppNav
+        person={profile}
+        unread={unread}
+        isModerator={profile.is_moderator}
+        unseenReports={unseenReports}
+      />
       <main id="main" className="flex-1 pb-20">
         {children}
       </main>

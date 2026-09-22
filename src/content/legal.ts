@@ -130,7 +130,7 @@ export const LEGAL_DOCS: LegalDoc[] = [
           "A student moderator reads it and decides one of three things. A warning, which is recorded on the account and counts on its public profile. A ban, which closes the account immediately and completely. Or a dismissal, when there is no breach of these rules or not enough to go on.",
           "Every decision carries a written reason, and that reason is sent to the people involved rather than kept in a file. If you are warned or banned you are told which rule and why, in a moderator's own words.",
           "A dismissed report leaves no mark, and the person it was about is never told it existed. That is deliberate: a game has two to four people in it, so telling somebody they were reported would effectively name whoever reported them.",
-          "If you think a decision is wrong, reply to the message it arrived in. Where there is more than one moderator, a different one will look at it.",
+          "Decisions are final. A moderator team of one cannot run an appeals process, and promising one we could not answer would be worse than saying so. You can still delete your account and everything in it at any time, including after it has been closed.",
         ],
       },
     ],
@@ -200,6 +200,7 @@ export const LEGAL_DOCS: LegalDoc[] = [
         heading: "Where it is held, and who else touches it",
         body: [
           "Deuce runs on Vercel and stores data in Supabase (PostgreSQL), hosted in the EU. Upstash is used to limit how often anyone can ask for a log in link, and holds only a counter against a hashed identifier.",
+          "Google, because sign in codes are sent through a Gmail mailbox. Google therefore handles your email address and the code itself in transit. The same mailbox receives a notice when a report is filed, which deliberately contains no names and no report text.",
           "These are processors acting on our instructions. Nobody else receives your data, and none of it is sold, ever.",
           "Cookies: one session cookie so you stay signed in, and nothing else. There is no analytics or advertising cookie. The cookie page lists it in full.",
         ],

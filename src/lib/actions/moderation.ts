@@ -8,6 +8,22 @@ import { createClient } from "@/lib/supabase/server";
 export type ModerationState = { error?: string; ok?: boolean; message?: string };
 
 /**
+ * Marks the queue as seen, which is the only thing that clears the badge.
+ *
+ * Called when the moderation page is opened. Deliberately separate from
+ * resolving anything: seeing a report and dealing with it are different acts,
+ * and only the first one is what the badge is counting.
+ */
+export async function markReportsSeen(): Promise<void> {
+  const { profile } = await requireMember();
+  if (!profile.is_moderator) return;
+
+  const supabase = await createClient();
+  await supabase.rpc("mark_reports_seen");
+  revalidatePath("/moderator", "layout");
+}
+
+/**
  * Resolve a report.
  *
  * Every rule lives in `resolve_report()` in the database: that the caller is a

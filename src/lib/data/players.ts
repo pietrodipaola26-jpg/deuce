@@ -129,3 +129,16 @@ export async function listMyReports(userId: string) {
     .limit(20);
   return data ?? [];
 }
+
+/**
+ * Open reports the moderator has not looked at yet.
+ *
+ * Answers zero for everybody else: the database function checks, so the nav can
+ * ask on every page load without branching on who is asking.
+ */
+export async function countUnseenReports(): Promise<number> {
+  const supabase = await createClient();
+  const { data, error } = await supabase.rpc("unseen_report_count");
+  if (error) return 0;
+  return data ?? 0;
+}

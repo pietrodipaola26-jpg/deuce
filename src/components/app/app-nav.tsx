@@ -31,11 +31,14 @@ export function AppNav({
   person,
   unread,
   isModerator = false,
+  unseenReports = 0,
 }: {
   person: { first_name: string | null; last_initial: string | null; tint: number };
   unread: number;
   /** Draws the moderation entry. The page refuses non-moderators by itself. */
   isModerator?: boolean;
+  /** Open reports not yet looked at. Always 0 for anybody but a moderator. */
+  unseenReports?: number;
 }) {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
@@ -63,11 +66,7 @@ export function AppNav({
                 )}
               >
                 {l.label}
-                {l.href === "/notifications" && unread > 0 ? (
-                  <span className="num inline-flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-court px-1 text-[0.6875rem] font-semibold text-on-court">
-                    {unread > 9 ? "9+" : unread}
-                  </span>
-                ) : null}
+                {l.href === "/notifications" ? <CountBadge count={unread} /> : null}
               </Link>
             </li>
           ))}
@@ -86,10 +85,22 @@ export function AppNav({
               onClick={() => setOpen((v) => !v)}
               aria-expanded={open}
               aria-haspopup="menu"
-              className="rounded-full focus-visible:outline-2"
+              className="relative rounded-full focus-visible:outline-2"
             >
               <Avatar person={person} size={36} />
-              <span className="sr-only">Your account</span>
+              {/* On the avatar because the queue lives behind this menu, and a
+                  moderator should see it without opening anything. */}
+              {unseenReports > 0 ? (
+                <span className="absolute -top-1 -right-1 ring-2 ring-paper rounded-full">
+                  <CountBadge count={unseenReports} small />
+                </span>
+              ) : null}
+              <span className="sr-only">
+                Your account
+                {unseenReports > 0
+                  ? `, ${unseenReports} report${unseenReports === 1 ? "" : "s"} waiting`
+                  : ""}
+              </span>
             </button>
 
             {open ? (
@@ -122,7 +133,10 @@ export function AppNav({
                     <>
                       <div className="my-1 h-px bg-hairline" />
                       <MenuLink href="/moderator" onNavigate={() => setOpen(false)}>
-                        Moderation
+                        <span className="flex items-center gap-2">
+                          Moderation
+                          <CountBadge count={unseenReports} small />
+                        </span>
                       </MenuLink>
                     </>
                   ) : null}
@@ -157,15 +171,35 @@ export function AppNav({
             )}
           >
             {l.label}
-            {l.href === "/notifications" && unread > 0 ? (
-              <span className="num inline-flex h-[17px] min-w-[17px] items-center justify-center rounded-full bg-court px-1 text-[0.625rem] font-semibold text-on-court">
-                {unread > 9 ? "9+" : unread}
-              </span>
-            ) : null}
+            {l.href === "/notifications" ? <CountBadge count={unread} small /> : null}
           </Link>
         ))}
       </div>
     </header>
+  );
+}
+
+/**
+ * The count badge.
+ *
+ * One component for both alerts and moderation, because they mean the same
+ * thing to a reader: this many things are waiting for you. Two different
+ * treatments would imply a difference that does not exist.
+ *
+ * Acid green rather than red. Red is this product's error colour, and a waiting
+ * report is not an error; it is work. The number carries the urgency.
+ */
+function CountBadge({ count, small = false }: { count: number; small?: boolean }) {
+  if (count <= 0) return null;
+  return (
+    <span
+      className={cn(
+        "num inline-flex items-center justify-center rounded-full bg-court px-1 font-semibold text-on-court",
+        small ? "h-[17px] min-w-[17px] text-[0.625rem]" : "h-[18px] min-w-[18px] text-[0.6875rem]",
+      )}
+    >
+      {count > 9 ? "9+" : count}
+    </span>
   );
 }
 

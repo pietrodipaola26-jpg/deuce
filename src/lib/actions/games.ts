@@ -3,7 +3,9 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
+import { env } from "@/env";
 import { requireMember } from "@/lib/auth/session";
+import { notifyModeratorOfReport } from "@/lib/mail";
 import { checkRateLimit, rateLimitMessage } from "@/lib/rate-limit";
 import { createClient } from "@/lib/supabase/server";
 import { fromLocalInputValue } from "@/lib/format";
@@ -328,6 +330,16 @@ export async function submitReport(_previous: ActionState, formData: FormData): 
     console.error("[reports] insert failed", error);
     return { errors: { form: "We could not send that report. Please try again." } };
   }
+
+  /**
+   * Tell the moderator, after the report is safely stored.
+   *
+   * Awaited rather than left dangling, because a serverless function can be
+   * frozen the moment it returns and an unawaited send would sometimes simply
+   * not happen. It never throws and never carries the report's contents, so the
+   * worst case is a logged failure and a report that is already saved.
+   */
+  await notifyModeratorOfReport(env.NEXT_PUBLIC_SITE_URL);
 
   return {
     ok: true,

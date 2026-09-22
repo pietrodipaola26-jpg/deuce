@@ -2,7 +2,7 @@
   "name": "deuce",
   "version": "1.0.0",
   "private": true,
-  "description": "Deuce \u2014 tennis and padel for Bocconi students in Milan.",
+  "description": "Deuce — tennis and padel for Bocconi students in Milan.",
   "scripts": {
     "dev": "next dev --port 3000",
     "build": "next build",
@@ -23,6 +23,7 @@
     "@upstash/ratelimit": "^2.0.8",
     "@upstash/redis": "^1.38.4",
     "next": "16.3.4",
+    "nodemailer": "^10.0.10",
     "react": "19.2.8",
     "react-dom": "19.2.8",
     "server-only": "^0.0.1",
@@ -31,6 +32,7 @@
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
+    "@types/nodemailer": "^8.0.2",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "eslint": "^9",
