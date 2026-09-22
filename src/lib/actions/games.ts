@@ -110,7 +110,7 @@ export async function createGame(_previous: ActionState, formData: FormData): Pr
   redirect(`/games/${data.id}`);
 }
 
-/** Adds a court a member names themselves. Lands unverified, and says so. */
+/** Adds a club a member names themselves. Lands unverified, and says so. */
 export async function createVenue(_previous: ActionState, formData: FormData): Promise<ActionState> {
   const { userId } = await requireMember();
 
@@ -132,9 +132,11 @@ export async function createVenue(_previous: ActionState, formData: FormData): P
     area: v.area,
     address: v.address || null,
     travel: v.travel || null,
-    surface: v.surface,
-    // Derived from the single choice, which is why they can never contradict.
-    indoor: v.roof === "indoor",
+    // An array of one. The club may well have more, and a moderator can add them.
+    surfaces: [v.surface],
+    // Derived from the single choice, so an impossible club cannot be described.
+    has_indoor: v.roof === "indoor",
+    has_outdoor: v.roof !== "indoor",
     covered_in_winter: v.roof === "winter",
     created_by: userId,
     // Never trusted from the client: the RLS policy also requires false.
@@ -143,11 +145,11 @@ export async function createVenue(_previous: ActionState, formData: FormData): P
 
   if (error) {
     console.error("[venues] create failed", error);
-    return { errors: { form: "We could not add that court. Please try again." } };
+    return { errors: { form: "We could not add that club. Please try again." } };
   }
 
   revalidatePath("/games/new");
-  return { ok: true, message: "Court added. Pick it from the list." };
+  return { ok: true, message: "Club added. Pick it from the list." };
 }
 
 export async function joinGame(gameId: string): Promise<ActionState> {

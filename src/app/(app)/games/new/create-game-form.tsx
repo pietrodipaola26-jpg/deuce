@@ -2,7 +2,7 @@
 
 import { useActionState, useId, useMemo, useRef, useState } from "react";
 
-import { ArrowRightIcon, IndoorIcon, PadelIcon, SunIcon, TennisIcon } from "@/components/brand/icons";
+import { ArrowRightIcon, IndoorIcon, PadelIcon, PinIcon, SunIcon, TennisIcon } from "@/components/brand/icons";
 import { LevelMeter } from "@/components/game/level-meter";
 import { Button, buttonClasses } from "@/components/ui/button";
 import { Card } from "@/components/ui/pieces";
@@ -10,7 +10,8 @@ import { Field, FormError, inputClasses, textareaClasses } from "@/components/ui
 import { createGame, createVenue, type ActionState } from "@/lib/actions/games";
 import type { Venue } from "@/lib/data/games";
 import { LEVELS, sportLabel, sportsPlayed, type SportId, type SportLevels } from "@/lib/game/level";
-import { roofForGame, roofLabel } from "@/lib/game/roof";
+import { defaultRoof, roofOptions, roofSummary } from "@/lib/game/roof";
+import { SURFACES, surfacesForSport } from "@/lib/game/surface";
 import { cn } from "@/lib/cn";
 
 /**
@@ -86,14 +87,30 @@ export function CreateGameForm({
    */
   const whenRef = useRef<HTMLInputElement>(null);
 
-  /** Only courts whose surface can host the chosen sport. */
+  /**
+   * The clubs that have a court for this sport. One entry per club, because a
+   * club is a place: see migration 00011. Padel needs a padel surface, tennis
+   * needs any of the others.
+   */
   const eligibleVenues = useMemo(
     () =>
       venues.filter((v) =>
-        sport === "padel" ? v.surface === "padel" : v.surface !== "padel",
+        sport === "padel"
+          ? v.surfaces.includes("padel")
+          : v.surfaces.some((x) => x !== "padel"),
       ),
     [venues, sport],
   );
+
+  /** The chosen club, derived rather than stored, so it cannot go stale. */
+  const venue = useMemo(() => venues.find((v) => v.id === venueId), [venues, venueId]);
+
+  /** What the host may pick at this club: its surfaces for this sport, its roofs. */
+  const surfaceChoices = useMemo(
+    () => surfacesForSport(venue?.surfaces ?? [], sport),
+    [venue, sport],
+  );
+  const roofChoices = useMemo(() => (venue ? roofOptions(venue) : []), [venue]);
 
   function chooseSport(next: SportId) {
     setSport(next);
@@ -116,18 +133,19 @@ export function CreateGameForm({
     setVenueId(id);
     const v = venues.find((x) => x.id === id);
     if (v) {
-      // The court knows its own surface, and the court plus the date knows the
-      // roof. Copying both saves two questions and removes the commonest way to
-      // post a wrong game. The host can still override the roof below.
-      setSurface(v.surface);
-      setIndoor(roofForGame(v, whenRef.current?.value));
+      // The club narrows both remaining questions to answers it actually offers,
+      // and the date decides the roof at a club that domes for the winter. The
+      // host confirms or changes both below. Its address comes with it too.
+      const first = surfacesForSport(v.surfaces, sport)[0];
+      if (first) setSurface(first);
+      setIndoor(defaultRoof(v, whenRef.current?.value));
     }
   }
 
-  /** A court domed only in winter changes answer when the host changes the day. */
+  /** A club domed only in winter gives a different answer on a different day. */
   function chooseWhen(value: string) {
     const v = venues.find((x) => x.id === venueId);
-    if (v) setIndoor(roofForGame(v, value));
+    if (v) setIndoor(defaultRoof(v, value));
   }
 
   if (addingVenue) {
@@ -232,9 +250,9 @@ export function CreateGameForm({
         <Card className="p-5">
           <Field
             id={`${ids}-venue`}
-            label="Which court?"
+            label="Which club?"
             error={errors.venueId}
-            hint="Pick the club. The surface and the roof come with it, worked out for the day you chose."
+            hint="Just the clubs with a court for this sport. Its address comes with it."
           >
             <select
               id={`${ids}-venue`}
@@ -242,15 +260,39 @@ export function CreateGameForm({
               onChange={(e) => chooseVenue(e.target.value)}
               className={inputClasses(Boolean(errors.venueId), "appearance-none pr-10")}
             >
-              <option value="">Choose a court…</option>
+              <option value="">Choose a club…</option>
               {eligibleVenues.map((v) => (
                 <option key={v.id} value={v.id}>
-                  {v.name} · {v.area} · {roofLabel(v)}
-                  {v.is_verified ? "" : " (added by a player)"}
+                  {v.name}
                 </option>
               ))}
             </select>
           </Field>
+
+          {/*
+            Filled in from the club, not typed by the host. The address is the one
+            thing somebody who has never been cannot work out for themselves, and
+            the point of choosing from a list is that they never have to.
+          */}
+          {venue ? (
+            <div className="mt-3 rounded-card border border-hairline bg-sunk p-4 text-sm">
+              <p className="text-ink-soft">
+                <PinIcon size={15} className="mr-1.5 inline align-[-2px] text-ink-faint" />
+                <span className="text-ink">{venue.address ?? venue.area}</span>, {venue.city},{" "}
+                {venue.country}
+              </p>
+              {venue.travel ? <p className="mt-1.5 text-ink-faint">{venue.travel}</p> : null}
+              <p className="mt-1.5 text-ink-faint">
+                {venue.area}. Has {roofSummary(venue)}.
+              </p>
+              {!venue.is_verified ? (
+                <p className="mt-2 text-xs text-warn">
+                  Added by a player and not yet confirmed by a moderator. Check it exists before you
+                  post.
+                </p>
+              ) : null}
+            </div>
+          ) : null}
 
           <p className="mt-3 text-sm text-ink-faint">
             Not listed?{" "}
@@ -259,29 +301,82 @@ export function CreateGameForm({
               onClick={() => setAddingVenue(true)}
               className="rounded font-medium text-court-text underline underline-offset-4"
             >
-              Add the court
+              Add the club
             </button>
             .
           </p>
 
-          <div className="mt-5 flex flex-wrap items-center gap-2">
-            <span className="text-sm text-ink-soft">
-              {indoor ? <IndoorIcon size={16} className="mr-1 inline align-[-3px]" /> : <SunIcon size={16} className="mr-1 inline align-[-3px]" />}
-              {indoor ? "Indoor" : "Outdoor"}
-            </span>
-            <button
-              type="button"
-              onClick={() => setIndoor((v) => !v)}
-              className="rounded-full border border-hairline px-2.5 py-1 text-xs font-medium text-ink-soft hover:border-edge"
-            >
-              Change
-            </button>
-            {errors.surface ? (
-              <span role="alert" className="text-sm text-danger">
-                {errors.surface}
-              </span>
-            ) : null}
-          </div>
+          {/*
+            Surface and roof are the host's to answer, because the host is the one
+            who booked the court and knows which of the club's they got. Both are
+            preselected from the club and the date, so the common case is a glance
+            rather than a decision. Hidden until a club is chosen: there is nothing
+            sensible to offer before then.
+          */}
+          {venue ? (
+            <div className="mt-5 flex flex-col gap-5 border-t border-hairline pt-5">
+              <fieldset>
+                <legend className="text-sm font-medium text-ink">Which surface did you book?</legend>
+                <div className="mt-3 flex flex-wrap gap-2">
+                  {surfaceChoices.map((id) => (
+                    <button
+                      key={id}
+                      type="button"
+                      onClick={() => setSurface(id)}
+                      aria-pressed={surface === id}
+                      className={cn(
+                        "rounded-full border px-4 py-2 text-sm font-medium transition-colors",
+                        surface === id
+                          ? "border-court-text bg-court text-on-court"
+                          : "border-hairline bg-surface text-ink-soft hover:border-edge",
+                      )}
+                    >
+                      {SURFACES[id].name}
+                    </button>
+                  ))}
+                </div>
+                {surfaceChoices.length === 1 ? (
+                  <p className="mt-2 text-sm text-ink-faint">
+                    The only surface {venue.name} has for {sportLabel(sport).toLowerCase()}.
+                  </p>
+                ) : null}
+                {errors.surface ? (
+                  <p role="alert" className="mt-2 text-sm text-danger">
+                    {errors.surface}
+                  </p>
+                ) : null}
+              </fieldset>
+
+              <fieldset>
+                <legend className="text-sm font-medium text-ink">Indoors or outdoors?</legend>
+                <div className="mt-3 flex flex-wrap gap-2">
+                  {roofChoices.map((r) => (
+                    <button
+                      key={r}
+                      type="button"
+                      onClick={() => setIndoor(r === "indoor")}
+                      aria-pressed={indoor === (r === "indoor")}
+                      className={cn(
+                        "inline-flex items-center gap-2 rounded-full border px-4 py-2 text-sm font-medium transition-colors",
+                        indoor === (r === "indoor")
+                          ? "border-court-text bg-court text-on-court"
+                          : "border-hairline bg-surface text-ink-soft hover:border-edge",
+                      )}
+                    >
+                      {r === "indoor" ? <IndoorIcon size={16} /> : <SunIcon size={16} />}
+                      {r === "indoor" ? "Indoor" : "Outdoor"}
+                    </button>
+                  ))}
+                </div>
+                {venue.covered_in_winter ? (
+                  <p className="mt-2 text-sm text-ink-faint">
+                    {venue.name} domes its outdoor courts from October to April, so this follows the
+                    day you picked. Change it if the dome is not up.
+                  </p>
+                ) : null}
+              </fieldset>
+            </div>
+          ) : null}
         </Card>
 
         {/* ── When ────────────────────────────────────────────────────────── */}
@@ -504,10 +599,10 @@ function AddVenueForm({ onDone }: { onDone: () => void }) {
       <form action={action}>
         <FormError>{errors.form}</FormError>
 
-        <h2 className="font-display text-xl font-medium tracking-[-0.015em] text-ink">Add a court</h2>
+        <h2 className="font-display text-xl font-medium tracking-[-0.015em] text-ink">Add a club</h2>
         <p className="mt-2 text-sm leading-relaxed text-ink-soft">
           It will be available to everybody, marked as added by a player until a moderator confirms it.
-          Only add courts that really exist.
+          Only add clubs that really exist.
         </p>
 
         <div className="mt-5 grid gap-5 sm:grid-cols-2">
@@ -619,7 +714,7 @@ function AddVenueForm({ onDone }: { onDone: () => void }) {
             Back
           </Button>
           <Button weight="primary" size="lg" type="submit" disabled={pending} className="flex-1">
-            {pending ? "Adding…" : "Add the court"}
+            {pending ? "Adding…" : "Add the club"}
           </Button>
         </div>
       </form>

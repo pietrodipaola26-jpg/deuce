@@ -125,8 +125,8 @@ update public.profiles set first_name='Kay',   last_initial='K', tennis_level=5,
   languages='{English}', terms_accepted_at=now(), age_confirmed_at=now(), onboarded_at=now() where id = :'prof';
 
 \echo '── TEST 4: an unonboarded member sees nothing; the trigger seats the host ──'
-select id as padel_court from public.venues where surface='padel' and indoor limit 1 \gset
-select id as hard_court  from public.venues where surface='hard' limit 1 \gset
+select id as padel_court from public.venues where 'padel' = any(surfaces) and has_indoor limit 1 \gset
+select id as hard_court  from public.venues where 'hard' = any(surfaces) limit 1 \gset
 select set_config('deuce.hard', :'hard_court', false), set_config('deuce.mara', :'mara', false),
        set_config('deuce.tomas', :'tomas', false), set_config('deuce.padel', :'padel_court', false);
 
@@ -484,26 +484,63 @@ select case when not exists (
   ) then 'PASS: no fabricated court is active'
   else 'FAIL: a fabricated court is still active' end;
 
-\echo '── TEST 26: a court cannot be permanently roofed AND domed for the winter ──'
--- indoor and covered_in_winter answer different questions and are mutually
--- exclusive. The add-a-court form offers one choice of three so it cannot say
--- both, but the form is not the thing that has to be right. See 00010.
+\echo '── TEST 26: a club must have a roof of some kind ──'
+-- has_indoor and has_outdoor describe what the club offers. Neither is not a
+-- club, it is a typo. The add-a-club form offers one choice of three so it cannot
+-- produce this, but the form is not the thing that has to be right. See 00011.
 do $$
 begin
-  insert into public.venues (name, area, surface, indoor, covered_in_winter)
-  values ('Contradiction Tennis Club', 'Nowhere', 'clay', true, true);
-  raise exception 'FAIL: a court claimed two kinds of roof';
+  insert into public.venues (name, area, surfaces, has_indoor, has_outdoor)
+  values ('Roofless Tennis Club', 'Nowhere', '{clay}', false, false);
+  raise exception 'FAIL: a club with no courts of either kind was accepted';
 exception
-  when check_violation then raise notice 'PASS: a court has one kind of roof';
+  when check_violation then raise notice 'PASS: a club has indoor or outdoor courts';
 end $$;
 
-\echo '── TEST 27: both sports have courts to play on ──'
--- A feed with no courts for one sport is a product that silently offers only the
+\echo '── TEST 27: a winter dome needs something to cover ──'
+do $$
+begin
+  insert into public.venues (name, area, surfaces, has_indoor, has_outdoor, covered_in_winter)
+  values ('Domeless Tennis Club', 'Nowhere', '{clay}', true, false, true);
+  raise exception 'FAIL: an indoor only club claimed a winter dome';
+exception
+  when check_violation then raise notice 'PASS: a winter dome needs outdoor courts';
+end $$;
+
+\echo '── TEST 28: a club must have at least one surface ──'
+do $$
+begin
+  insert into public.venues (name, area, surfaces, has_indoor)
+  values ('Surfaceless Tennis Club', 'Nowhere', '{}', true);
+  raise exception 'FAIL: a club with no surfaces was accepted';
+exception
+  when check_violation then raise notice 'PASS: a club has somewhere to play';
+end $$;
+
+\echo '── TEST 29: one active row per club, forever ──'
+-- The bug this whole shape exists to prevent. Before 00011 there was no unique
+-- constraint on this table at all, which is how one club came to occupy four rows
+-- and appear three times in a single dropdown. Case and padding do not get around
+-- it; a retired row keeps its name, which is why the index is partial.
+do $$
+begin
+  insert into public.venues (name, area, surfaces, has_indoor)
+  values ('  quanta club  ', 'Milano Nord', '{padel}', true);
+  raise exception 'FAIL: a second active row for one club was accepted';
+exception
+  when unique_violation then raise notice 'PASS: a club is one row';
+end $$;
+
+\echo '── TEST 30: both sports have clubs to play at ──'
+-- A feed with no clubs for one sport is a product that silently offers only the
 -- other. Padel needs a padel surface; tennis needs anything but.
 select case
-  when (select count(*) from public.venues where is_active and surface = 'padel') > 0
-   and (select count(*) from public.venues where is_active and surface <> 'padel') > 0
-  then 'PASS: both sports have active courts'
+  when (select count(*) from public.venues
+        where is_active and 'padel' = any(surfaces)) > 0
+   and (select count(*) from public.venues
+        where is_active and exists (
+          select 1 from unnest(surfaces) s where s <> 'padel')) > 0
+  then 'PASS: both sports have active clubs'
   else 'FAIL: one sport has nowhere to play' end;
 
 \echo 'ALL TESTS COMPLETE'

@@ -497,12 +497,13 @@ export type Database = {
           covered_in_winter: boolean
           created_at: string
           created_by: string | null
+          has_indoor: boolean
+          has_outdoor: boolean
           id: string
-          indoor: boolean
           is_active: boolean
           is_verified: boolean
           name: string
-          surface: Database["public"]["Enums"]["surface"]
+          surfaces: Database["public"]["Enums"]["surface"][]
           travel: string | null
         }
         Insert: {
@@ -513,12 +514,13 @@ export type Database = {
           covered_in_winter?: boolean
           created_at?: string
           created_by?: string | null
+          has_indoor?: boolean
+          has_outdoor?: boolean
           id?: string
-          indoor?: boolean
           is_active?: boolean
           is_verified?: boolean
           name: string
-          surface: Database["public"]["Enums"]["surface"]
+          surfaces?: Database["public"]["Enums"]["surface"][]
           travel?: string | null
         }
         Update: {
@@ -529,12 +531,13 @@ export type Database = {
           covered_in_winter?: boolean
           created_at?: string
           created_by?: string | null
+          has_indoor?: boolean
+          has_outdoor?: boolean
           id?: string
-          indoor?: boolean
           is_active?: boolean
           is_verified?: boolean
           name?: string
-          surface?: Database["public"]["Enums"]["surface"]
+          surfaces?: Database["public"]["Enums"]["surface"][]
           travel?: string | null
         }
         Relationships: [

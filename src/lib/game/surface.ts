@@ -49,3 +49,22 @@ export const SURFACES: Record<SurfaceId, Surface> = {
 };
 
 export const SURFACE_LIST = Object.values(SURFACES);
+
+/**
+ * The surfaces at a club that can host a given sport.
+ *
+ * Padel is played on one surface and tennis on the other three, which is also
+ * what games_surface_match_sport in 00001 enforces. A club row lists every
+ * surface it has, so this is what turns "Crespi has clay, hard and padel" into
+ * the two choices a tennis host is offered there.
+ *
+ * Falls back to every surface the sport allows when the club lists none for it,
+ * because a host who booked a court must be able to post the game even if our
+ * record of the club is thin. Supply is the constraint on this product.
+ */
+export function surfacesForSport(surfaces: SurfaceId[], sport: "tennis" | "padel"): SurfaceId[] {
+  const allowed: SurfaceId[] =
+    sport === "padel" ? ["padel"] : ["clay", "hard", "grass"];
+  const has = allowed.filter((s) => surfaces.includes(s));
+  return has.length ? has : allowed;
+}

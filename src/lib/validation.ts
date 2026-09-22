@@ -132,11 +132,16 @@ export const venueSchema = z.object({
   // is given it has to be long enough to be an address rather than a word.
   address: trimmed(160).min(4, "That is too short to find.").optional().or(z.literal("")),
   travel: trimmed(120).optional().or(z.literal("")),
+  /**
+   * The surface the member is adding the club for. A club row holds an array,
+   * because a club can have several, but somebody adding a court knows the one
+   * they just booked. A moderator can widen it later.
+   */
   surface: z.enum(["clay", "hard", "padel", "grass"]),
   /**
-   * One choice, not two booleans. venues.indoor and venues.covered_in_winter
-   * cannot both be true and the database has a check constraint saying so, so
-   * the form is not given a way to say it. See src/lib/game/roof.ts.
+   * One choice of three, not three booleans. venues_has_a_roof and
+   * venues_winter_cover_is_outdoor in 00011 reject the combinations this does not
+   * offer, so the form is never given a way to describe an impossible club.
    */
   roof: z.enum(["indoor", "winter", "open"], { message: "Is it covered?" }),
 });
