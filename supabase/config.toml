@@ -1,0 +1,94 @@
+# Supabase local configuration for Deuce.
+#
+# PORTS ARE SHIFTED BY 1000 from the CLI defaults (55321 rather than 54321).
+# Another Supabase stack already runs on this machine on the default ports, and
+# two stacks that share a port cannot both be up. Shifting the whole block keeps
+# this project's stack independent: it can be reset, seeded or destroyed without
+# touching anything else.
+#
+# Nothing here describes production. Hosted projects are configured in the
+# Supabase dashboard; this file is local and CI only.
+
+project_id = "deuce"
+
+[api]
+enabled = true
+port = 55321
+schemas = ["public", "graphql_public"]
+# Mirrors the search_path pinned on every SECURITY DEFINER function in 00001.
+extra_search_path = ["public", "extensions"]
+max_rows = 1000
+
+[db]
+port = 55322
+shadow_port = 55320
+# 15+ is required: the schema uses `CREATE VIEW ... WITH (security_invoker = ...)`,
+# which does not exist before PostgreSQL 15.
+major_version = 15
+
+[db.pooler]
+enabled = false
+
+[realtime]
+# Genuinely used: the game thread subscribes to postgres_changes on messages so
+# a reply appears without a refresh.
+enabled = true
+
+[studio]
+enabled = true
+port = 55323
+
+[local_smtp]
+# Local mail catcher. Deuce signs people in with an emailed link, so without
+# this there is no way to complete a sign-in locally.
+enabled = true
+port = 55324
+
+[storage]
+# OFF, and it stays off. Deuce has no photographs anywhere — an avatar is
+# initials on a stable tint. That is a product decision, not a shortcut: a grid
+# of student faces turns a matchmaking platform into something it must not be,
+# and the trust here comes from a verified mailbox and a record of turning up.
+#
+# It is left ENABLED only because the CLI's own health gate expects the service
+# to exist; nothing in this application ever uploads or reads a file.
+enabled = true
+file_size_limit = "50MiB"
+
+[auth]
+enabled = true
+site_url = "http://localhost:3000"
+# Both hosts stay listed so a link opened on either one is accepted, but
+# site_url decides where links are generated for. PKCE stores its code verifier
+# in a cookie, and 127.0.0.1 and localhost are different cookie origins — a flow
+# that starts on one and finishes on the other loses the verifier and produces no
+# session, with no error to show for it.
+additional_redirect_urls = [
+  "http://localhost:3000/auth/callback",
+  "http://127.0.0.1:3000/auth/callback",
+]
+jwt_expiry = 3600
+enable_refresh_token_rotation = true
+refresh_token_reuse_interval = 10
+enable_signup = true
+
+[auth.email]
+enable_signup = true
+# Deuce does not use passwords at all — sign-in is an emailed link or a 6-digit
+# code, so controlling the mailbox IS the verification. Confirmations are on to
+# match production behaviour.
+enable_confirmations = true
+double_confirm_changes = true
+secure_password_change = false
+# GoTrue defaults to one email per 60 seconds per address, which makes testing a
+# sign-in loop painful. Local only.
+max_frequency = "5s"
+otp_length = 6
+otp_expiry = 3600
+
+[auth.sms]
+enable_signup = false
+enable_confirmations = false
+
+[analytics]
+enabled = false

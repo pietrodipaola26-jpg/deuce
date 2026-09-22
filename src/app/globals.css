@@ -1,0 +1,203 @@
+@import "tailwindcss";
+
+/* ===========================================================================
+   DEUCE - MVP SITE DESIGN SYSTEM
+   ===========================================================================
+
+   THE BRIEF THIS ANSWERS. Take the colour of the deployed app, which is the
+   colour of the sport itself, but keep the page mostly white. Warm and
+   athletic rather than technical and minimal.
+
+   SO THE GROUND STAYS WHITE AND THE INK TURNS GREEN. The deployed app is a
+   night session: near black court green, floodlit, with one acid green ball on
+   it. This site keeps both of those colours and inverts which one does the
+   work. White page, deep court green for every word on it, and the acid ball
+   green reserved for the thing to press. Roughly nine tenths of any screen
+   here is white, and the green arrives where it means something.
+
+   ONE DARK BAND, on purpose. The closing call to action is the deployed app's
+   own ground, full strength, with the acid button on it. It is the one place
+   the identity gets to be loud, and it lands because nothing before it was.
+
+   THE ACID GREEN NEEDS AN EDGE. #D8F651 measures 1.22:1 against white, so a
+   filled acid button on a white page has effectively no boundary. It is drawn
+   with a deep leaf green border for that reason, not for decoration, and the
+   border is the same green the accent text uses so the family stays closed.
+
+   ACID GREEN IS NEVER TEXT ON WHITE. It cannot be. Accent words use
+   --color-court-text, a deep leaf green of the same hue that clears 4.5:1 on
+   every ground here. The bright green is a fill, a mark and a highlight only.
+
+   SURFACES ARE DATA, NOT DECORATION. Clay, hard, turf and grass are sampled
+   from the real materials, and they are marks only: every one clears 3:1
+   against both grounds as a dot, none clears 4.5:1 as text. The surface NAME is
+   set in ink beside its dot. Colour makes a feed scannable, the word makes it
+   legible, and no meaning here is ever carried by colour alone.
+   =========================================================================== */
+
+@theme {
+  /* --- Ground. Mostly white, and warm rather than blue-white. ------------ */
+  --color-paper: #fafcf8;
+  --color-surface: #ffffff;
+  --color-sunk: #f0f5ed;
+
+  /* --- The dark band. The deployed app's own ground, borrowed whole. ----- */
+  --color-band: #0b1e17;
+  --color-band-2: #123026;
+  --color-on-band: #ffffff;
+  --color-on-band-soft: #a8c3b5;
+
+  /* --- Ink. Deep court green, not black. --------------------------------
+     Measured against paper, surface AND sunk, because a caption moves between
+     all three constantly. Softest of the three still clears 5:1. */
+  --color-ink: #0b1e17;
+  --color-ink-soft: #465650;
+  --color-ink-faint: #5d6b63;
+
+  /* --- Edges ------------------------------------------------------------
+     --hairline is decorative and may sit under 3:1 (1.4.11 exempts it).
+     --edge identifies a control and holds 3:1 against white and paper. */
+  --color-hairline: #e2eadf;
+  --color-edge: #7d9485;
+
+  /* --- The ball ---------------------------------------------------------
+     One accent, one meaning: this is the thing to press. */
+  --color-court: #d8f651;
+  --color-court-deep: #c9ea36;
+  --color-court-wash: #f4fad9;
+  --color-on-court: #14140f;
+  /* The accent as a legible word, and as the acid button's edge. */
+  --color-court-text: #476f10;
+
+  /* --- The four playing surfaces (information, not decoration) ---------- */
+  --color-surf-clay: #c25e3a;
+  --color-surf-grass: #3f7f3b;
+  --color-surf-hard: #5b7a99;
+  --color-surf-padel: #0d8d88;
+
+  /* --- Semantic state ---------------------------------------------------
+     "Open" borrows the accent family on purpose: an open game is the good
+     outcome, and it should read as the brand rather than as a fifth green. */
+  --color-live: #476f10;
+  --color-live-wash: #f4fad9;
+  --color-warn: #975c07;
+  --color-warn-wash: #fdf3e2;
+  --color-danger: #b3261e;
+  --color-danger-wash: #fceded;
+
+  /* --- Type -------------------------------------------------------------
+     TWO families, and deliberately no monospace. A mono set of figures was
+     the single most "technical" thing on this site; numbers are now set in the
+     display face with tabular figures, which keeps a column of stats aligned
+     without making it look like a terminal.
+
+     ARCHIVO carries the identity. A grotesque with athletic proportions,
+     wide and sturdy, at home on a jersey or a fixture list.
+     FIGTREE carries the argument. Humanist, open, softly rounded, warm. */
+  --font-display: var(--font-archivo), ui-sans-serif, system-ui, sans-serif;
+  --font-sans: var(--font-figtree), ui-sans-serif, system-ui, sans-serif;
+
+  /* --- Radius. One scale, followed everywhere, and generous. ------------
+     Rounder than the previous pass: tight corners read engineered, and the
+     brief asked for warm. */
+  --radius-field: 12px;
+  --radius-card: 18px;
+  --radius-shell: 26px;
+
+  /* --- Elevation. On a white ground, shadow is a whisper. --------------- */
+  --shadow-lift-1: 0 1px 2px rgb(11 30 23 / 0.06);
+  --shadow-lift-2: 0 6px 22px -6px rgb(11 30 23 / 0.13);
+  --shadow-lift-3: 0 24px 60px -20px rgb(11 30 23 / 0.22);
+
+  /* --- Motion -----------------------------------------------------------
+     No ease-in: it delays the first frame, which is the moment someone is
+     actually watching.
+
+     There are no entrance animations left in this product. Content that fades
+     or floats into place is content somebody has to wait for, and the page has
+     nothing to hide while it arrives. These easings are for state changes only:
+     a button pressing, a filter turning on. */
+  --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+  --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
+}
+
+@layer base {
+  :root {
+    color-scheme: light;
+  }
+
+  * {
+    border-color: var(--color-hairline);
+  }
+
+  html {
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    background-color: var(--color-paper);
+    color: var(--color-ink);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+
+  /* One focus ring, on every focusable thing, never removed. Drawn in the deep
+     leaf green rather than the acid, because the acid ring disappears against
+     a white page at exactly the moment it is needed. */
+  :focus-visible {
+    outline: 2px solid var(--color-court-text);
+    outline-offset: 2px;
+    border-radius: 6px;
+  }
+
+  ::selection {
+    background-color: var(--color-court);
+    color: var(--color-on-court);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+}
+
+@layer utilities {
+  /* NUMBERS. Every score, level, price, rating and time on the site. Display
+     face, tabular figures so a column lines up, and a touch tighter than the
+     text around it so a big time reads as one object. */
+  .num {
+    font-family: var(--font-display);
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -0.01em;
+  }
+
+  /* SECTION LABELS. Uppercase, because a team sheet is uppercase, but set in
+     the athletic face at a warm weight and a much softer tracking than the
+     letterspaced small caps this replaced. */
+  .label {
+    font-family: var(--font-display);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+  }
+
+  /* A hairline that reads as a painted court line rather than a CSS border. */
+  .court-rule {
+    background-image: linear-gradient(
+      to right,
+      transparent,
+      var(--color-hairline) 12%,
+      var(--color-hairline) 88%,
+      transparent
+    );
+    height: 1px;
+  }
+
+}
