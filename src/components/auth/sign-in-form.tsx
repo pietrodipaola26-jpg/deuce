@@ -59,8 +59,8 @@ export function SignInForm({
           Check your Bocconi inbox
         </h2>
         <p className="mt-2.5 text-[0.9375rem] leading-relaxed text-ink-soft">
-          We sent a six digit code to <span className="font-medium text-ink">{sentTo}</span>. Type it
-          below and you are in. There is no password to set.
+          We sent a code to <span className="font-medium text-ink">{sentTo}</span>. Type it below and
+          you are in. There is no password to set.
         </p>
 
         {/*
@@ -77,7 +77,7 @@ export function SignInForm({
             id={codeId}
             label="Your code"
             error={codeState.error ?? undefined}
-            hint="Six digits, from the email that just arrived."
+            hint="From the email that just arrived."
           >
             <input
               id={codeId}
@@ -85,12 +85,12 @@ export function SignInForm({
               inputMode="numeric"
               autoComplete="one-time-code"
               autoFocus
-              maxLength={6}
+              maxLength={10}
               placeholder="123456"
               aria-invalid={codeState.error ? true : undefined}
               className={inputClasses(
                 Boolean(codeState.error),
-                "num text-center text-2xl tracking-[0.4em]",
+                "num text-center text-2xl tracking-[0.25em]",
               )}
             />
           </Field>
@@ -138,7 +138,7 @@ export function SignInForm({
         <p className="mt-2.5 text-[0.9375rem] leading-relaxed text-ink-soft">
           {mode === "signup"
             ? "It is the whole of the check. Deuce is Bocconi only, and this is what makes everyone on it a fellow student rather than a stranger from the internet."
-            : "We will send you a six digit code. There is no password on Deuce. Controlling your Bocconi mailbox is how we know it is you."}
+            : "We will send you a code by email. There is no password on Deuce. Controlling your Bocconi mailbox is how we know it is you."}
         </p>
 
         <input type="hidden" name="next" value={next} />

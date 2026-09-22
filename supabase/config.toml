@@ -83,7 +83,8 @@ secure_password_change = false
 # GoTrue defaults to one email per 60 seconds per address, which makes testing a
 # sign-in loop painful. Local only.
 max_frequency = "5s"
-otp_length = 6
+# Matches the hosted project, so a local sign in exercises the same length.
+otp_length = 8
 otp_expiry = 3600
 
 # Local copies of the production templates, so a local sign in exercises the

@@ -12,7 +12,7 @@ import { createClient } from "@/lib/supabase/server";
 /**
  * SIGNING IN.
  *
- * There are no passwords in Deuce. Signing in means receiving a six digit code
+ * There are no passwords in Deuce. Signing in means receiving a numeric code
  * at a Bocconi mailbox and typing it back, and that is not a shortcut: it IS the
  * verification the whole product rests on.
  *
@@ -123,7 +123,22 @@ export async function verifyCode(_previous: AuthState, formData: FormData): Prom
   const token = String(formData.get("code") ?? "").replace(/\s/g, "");
   const next = String(formData.get("next") ?? "");
 
-  if (!/^\d{6}$/.test(token)) return { error: "The code is six digits.", email, sent: true };
+  /**
+   * Any length Supabase might issue, not a number hardcoded here.
+   *
+   * Email OTP length is a project setting with a range of 6 to 10, and this
+   * check previously insisted on exactly 6. On a project configured for 8 that
+   * meant a perfectly valid code was rejected by the form before it was ever
+   * sent for verification, which reads as "the code does not work" when in fact
+   * it was never tried.
+   *
+   * The shape check is only here to catch an obvious typo early. The real
+   * decision belongs to Supabase, which compares the token against the hash it
+   * issued and enforces expiry and single use.
+   */
+  if (!/^\d{6,10}$/.test(token)) {
+    return { error: "Enter the code from the email, digits only.", email, sent: true };
+  }
 
   const decision = await checkRateLimit("signin", `code:${email}`);
   if (!decision.ok) {
