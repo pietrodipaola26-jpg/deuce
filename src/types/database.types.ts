@@ -497,6 +497,8 @@ export type Database = {
           covered_in_winter: boolean
           created_at: string
           created_by: string | null
+          drive_minutes: number | null
+          facilities: string[]
           has_indoor: boolean
           has_outdoor: boolean
           id: string
@@ -516,6 +518,8 @@ export type Database = {
           covered_in_winter?: boolean
           created_at?: string
           created_by?: string | null
+          drive_minutes?: number | null
+          facilities?: string[]
           has_indoor?: boolean
           has_outdoor?: boolean
           id?: string
@@ -535,6 +539,8 @@ export type Database = {
           covered_in_winter?: boolean
           created_at?: string
           created_by?: string | null
+          drive_minutes?: number | null
+          facilities?: string[]
           has_indoor?: boolean
           has_outdoor?: boolean
           id?: string

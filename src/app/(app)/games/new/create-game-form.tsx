@@ -285,29 +285,76 @@ export function CreateGameForm({
           </Field>
 
           {/*
-            Filled in from the club, not typed by the host. The address is the one
-            thing somebody who has never been cannot work out for themselves, and
-            the point of choosing from a list is that they never have to.
+            Filled in from the club, not typed by the host, and in the order a
+            student actually asks: where is it, how far, how long to get there,
+            and what is there when I arrive. The address is the one thing somebody
+            who has never been cannot work out for themselves, and the point of
+            choosing from a list is that they never have to.
           */}
           {venue ? (
-            <div className="mt-3 rounded-card border border-hairline bg-sunk p-4 text-sm">
-              <p className="text-ink-soft">
-                <PinIcon size={15} className="mr-1.5 inline align-[-2px] text-ink-faint" />
-                <span className="text-ink">{venue.address ?? venue.area}</span>, {venue.city},{" "}
-                {venue.country}
+            <div className="mt-3 rounded-card border border-hairline bg-sunk p-4">
+              {/* 1. Where it is. */}
+              <p className="flex gap-2 text-sm text-ink-soft">
+                <PinIcon size={15} className="mt-0.5 shrink-0 text-ink-faint" />
+                <span>
+                  <span className="font-medium text-ink">{venue.address ?? venue.area}</span>
+                  <br />
+                  {venue.city}, {venue.country}
+                </span>
               </p>
-              {venue.travel ? <p className="mt-1.5 text-ink-faint">{venue.travel}</p> : null}
-              {formatKm(kmFromCampus(venue)) ? (
-                <p className="mt-1.5 text-ink-faint">
-                  <span className="num text-ink-soft">{formatKm(kmFromCampus(venue))}</span> from
-                  campus in a straight line.
+
+              {/* 2 and 3. How far, and how long. Both from campus, both stated as
+                  such, because "12 minutes" with no origin is not information. */}
+              <dl className="mt-4 grid grid-cols-2 gap-x-4 gap-y-3 border-t border-hairline pt-4 text-sm">
+                {formatKm(kmFromCampus(venue)) ? (
+                  <div>
+                    <dt className="text-ink-faint">From Bocconi&apos;s campus</dt>
+                    <dd className="num mt-0.5 font-medium text-ink">
+                      {formatKm(kmFromCampus(venue))}
+                    </dd>
+                  </div>
+                ) : null}
+                {venue.drive_minutes ? (
+                  <div>
+                    <dt className="text-ink-faint">By car from campus</dt>
+                    <dd className="mt-0.5 font-medium text-ink">
+                      <span className="num">{venue.drive_minutes}</span> min
+                      <span className="ml-1 font-normal text-ink-faint">without traffic</span>
+                    </dd>
+                  </div>
+                ) : null}
+              </dl>
+
+              {/* 4. What is there. Courts first, since that is why they are going. */}
+              <div className="mt-4 border-t border-hairline pt-4 text-sm">
+                <p className="text-ink-faint">
+                  {venue.area}. Has {roofSummary(venue)}
+                  {venue.surfaces.length
+                    ? `, on ${venue.surfaces.map((x) => SURFACES[x].name.toLowerCase()).join(", ")}`
+                    : ""}
+                  .
                 </p>
-              ) : null}
-              <p className="mt-1.5 text-ink-faint">
-                {venue.area}. Has {roofSummary(venue)}.
-              </p>
+                {venue.facilities.length ? (
+                  <ul className="mt-3 flex flex-wrap gap-1.5">
+                    {venue.facilities.map((f) => (
+                      <li
+                        key={f}
+                        className="rounded-full border border-hairline bg-surface px-2.5 py-1 text-xs text-ink-soft"
+                      >
+                        {f}
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  // Empty means the club publishes nothing, never that we guessed.
+                  <p className="mt-2 text-xs text-ink-faint">
+                    This club does not publish a list of what else is on site.
+                  </p>
+                )}
+              </div>
+
               {!venue.is_verified ? (
-                <p className="mt-2 text-xs text-warn">
+                <p className="mt-4 border-t border-hairline pt-4 text-xs text-warn">
                   Added by a player and not yet confirmed by a moderator. Check it exists before you
                   post.
                 </p>

@@ -167,7 +167,7 @@ export async function listVenues() {
   const { data, error } = await supabase
     .from("venues")
     .select(
-      "id, name, area, address, city, country, travel, surfaces, has_indoor, has_outdoor, covered_in_winter, lat, lon, is_verified",
+      "id, name, area, address, city, country, surfaces, has_indoor, has_outdoor, covered_in_winter, lat, lon, drive_minutes, facilities, travel, is_verified",
     )
     .eq("is_active", true)
     // Ordered here only so the result is stable. The list the host sees is sorted
