@@ -34,76 +34,76 @@
 delete from public.venues;
 
 insert into public.venues
-  (name, area, address, travel, surfaces, has_indoor, has_outdoor, covered_in_winter, is_verified)
+  (name, area, address, travel, surfaces, has_indoor, has_outdoor, covered_in_winter, lat, lon, is_verified)
 values
   ('Tennis Porta Romana', 'Porta Romana', 'Largo Franco Parenti 2, 20135',
    '1.4 km from campus, about 17 min on foot or 6 by bike',
-   '{clay}', false, true, true, true),
+   '{clay}', false, true, true, 45.453584, 9.206001, true),
 
   ('S.G.M. Forza e Coraggio', 'Morivione', 'Via Gallura 8, 20141',
    '1.5 km from campus, 18 min on foot. Bocconi Sport members get a rate here',
-   '{hard}', true, false, false, true),
+   '{hard}', true, false, false, 45.437560, 9.199153, true),
 
   ('Padel Club Ripamonti', 'Ripamonti', 'Via Cascina Belcasule 15, 20141',
    '2.1 km from campus, about 9 min by bike',
-   '{padel}', true, false, false, true),
+   '{padel}', true, false, false, 45.431069, 9.196105, true),
 
   ('Getfit Via Vico', 'Magenta', 'Via Gian Battista Vico 38, 20123',
    '2.3 km from campus, about 10 min by bike',
-   '{padel}', true, false, false, true),
+   '{padel}', true, false, false, 45.462271, 9.167706, true),
 
   ('IL LOPE', 'San Cristoforo', 'Via Felice Lope de Vega 35, 20143',
    '2.4 km from campus, about 10 min by bike',
-   '{padel,hard}', true, true, false, true),
+   '{padel,hard}', true, true, false, 45.439153, 9.162526, true),
 
   ('BEAT PADEL', 'Barona', 'Via San Paolino 9, 20142',
    '2.5 km from campus, about 11 min by bike',
-   '{padel}', true, false, false, true),
+   '{padel}', true, false, false, 45.433864, 9.165173, true),
 
   ('Canottieri Olona 1894', 'San Cristoforo', 'Alzaia Naviglio Grande 146, 20144',
    '2.8 km from campus, about 12 min by bike along the Naviglio',
-   '{clay}', true, false, false, true),
+   '{clay}', true, false, false, 45.447486, 9.153438, true),
 
   ('SPH Milano Barona', 'Barona', 'Via Ovada 22, 20142',
    '2.9 km from campus, about 12 min by bike',
-   '{padel}', true, false, false, true),
+   '{padel}', true, false, false, 45.435830, 9.157751, true),
 
   ('Centro Tennis Washington', 'Washington', 'Via Sebastiano Caboto 6, 20144',
    '3.0 km from campus, about 13 min by bike',
-   '{clay}', false, true, true, true),
+   '{clay}', false, true, true, 45.462048, 9.156278, true),
 
   ('Ausonia Padel', 'Ortomercato', 'Via Bonfadini 18, 20137',
    '3.0 km from campus, about 13 min by bike',
-   '{padel}', true, false, false, true),
+   '{padel}', true, false, false, 45.448615, 9.228223, true),
 
   ('Tennis Club Lombardo', 'Corsica', 'Via Giancarlo Sismondi 8, 20133',
    '3.4 km from campus, about 14 min by bike',
-   '{clay}', false, true, false, true),
+   '{clay}', false, true, false, 45.465567, 9.225335, true),
 
   ('Centro Sportivo Bonacossa', 'Mecenate', 'Via Mecenate 74, 20138',
    '4.5 km from campus, about 19 min by bike',
-   '{clay,hard,padel}', true, true, false, true),
+   '{clay,hard,padel}', true, true, false, 45.453238, 9.247231, true),
 
   ('Crespi Sport Village', 'Città Studi', 'Via Carlo Valvassori Peroni 48, 20133',
    '5.0 km from campus, about 21 min by bike, near the Politecnico',
-   '{clay,hard,padel}', true, true, false, true),
+   '{clay,hard,padel}', true, true, false, 45.479273, 9.236732, true),
 
   ('MUP Milano Urban Padel', 'Maggiolina', 'Via Cardinale Giovanni Cagliero 14/b, 20125',
    '5.3 km from campus, north of the centre',
-   '{padel}', true, false, false, true),
+   '{padel}', true, false, false, 45.495350, 9.204008, true),
 
   ('Padel Arena Quintosole', 'Quintosole', 'Via Quintosole 42, 20141',
    '5.3 km from campus, straight down Ripamonti',
-   '{padel}', true, false, false, true),
+   '{padel}', true, false, false, 45.401944, 9.203091, true),
 
   ('Tennis Club Milano Alberto Bonacossa', 'Ghisolfa', 'Via Generale Arimondi 15, 20155',
    '5.3 km from campus, across the city to the north west',
-   '{clay}', false, true, true, true),
+   '{clay}', false, true, true, 45.490502, 9.155400, true),
 
   ('Aspria Harbour Club Milano', 'Bosco in Città', 'Via Cascina Bellaria 19, 20153',
    '7.4 km from campus, on the western edge of the city',
-   '{clay,hard,padel}', true, true, true, true),
+   '{clay,hard,padel}', true, true, true, 45.480864, 9.105505, true),
 
   ('Quanta Club', 'Milano Nord', 'Via Assietta 19, 20161',
    '8.0 km from campus, on the northern edge of the city',
-   '{clay,hard,padel}', true, true, true, true);
+   '{clay,hard,padel}', true, true, true, 45.518094, 9.163445, true);

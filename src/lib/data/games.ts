@@ -166,9 +166,12 @@ export async function listVenues() {
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("venues")
-    .select("id, name, area, address, city, country, travel, surfaces, has_indoor, has_outdoor, covered_in_winter, is_verified")
+    .select(
+      "id, name, area, address, city, country, travel, surfaces, has_indoor, has_outdoor, covered_in_winter, lat, lon, is_verified",
+    )
     .eq("is_active", true)
-    .order("is_verified", { ascending: false })
+    // Ordered here only so the result is stable. The list the host sees is sorted
+    // by distance from campus in the form, which needs the coordinates in hand.
     .order("name", { ascending: true });
 
   if (error) throw new Error(`Could not load the courts: ${error.message}`);

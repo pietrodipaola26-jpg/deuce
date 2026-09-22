@@ -502,6 +502,8 @@ export type Database = {
           id: string
           is_active: boolean
           is_verified: boolean
+          lat: number | null
+          lon: number | null
           name: string
           surfaces: Database["public"]["Enums"]["surface"][]
           travel: string | null
@@ -519,6 +521,8 @@ export type Database = {
           id?: string
           is_active?: boolean
           is_verified?: boolean
+          lat?: number | null
+          lon?: number | null
           name: string
           surfaces?: Database["public"]["Enums"]["surface"][]
           travel?: string | null
@@ -536,6 +540,8 @@ export type Database = {
           id?: string
           is_active?: boolean
           is_verified?: boolean
+          lat?: number | null
+          lon?: number | null
           name?: string
           surfaces?: Database["public"]["Enums"]["surface"][]
           travel?: string | null

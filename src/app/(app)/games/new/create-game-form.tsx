@@ -10,6 +10,7 @@ import { Field, FormError, inputClasses, textareaClasses } from "@/components/ui
 import { createGame, createVenue, type ActionState } from "@/lib/actions/games";
 import type { Venue } from "@/lib/data/games";
 import { LEVELS, sportLabel, sportsPlayed, type SportId, type SportLevels } from "@/lib/game/level";
+import { byDistanceFromCampus, formatKm, kmFromCampus } from "@/lib/game/distance";
 import { defaultRoof, roofOptions, roofSummary } from "@/lib/game/roof";
 import { SURFACES, surfacesForSport } from "@/lib/game/surface";
 import { cn } from "@/lib/cn";
@@ -94,11 +95,16 @@ export function CreateGameForm({
    */
   const eligibleVenues = useMemo(
     () =>
-      venues.filter((v) =>
-        sport === "padel"
-          ? v.surfaces.includes("padel")
-          : v.surfaces.some((x) => x !== "padel"),
-      ),
+      venues
+        .filter((v) =>
+          sport === "padel"
+            ? v.surfaces.includes("padel")
+            : v.surfaces.some((x) => x !== "padel"),
+        )
+        // Nearest first. How far a court is from campus is the thing a student
+        // actually decides on, and alphabetical put a club 7.4 km away above one
+        // at 1.4 km. Clubs with no coordinates sort last, never hidden.
+        .sort(byDistanceFromCampus),
     [venues, sport],
   );
 
@@ -252,7 +258,7 @@ export function CreateGameForm({
             id={`${ids}-venue`}
             label="Which club?"
             error={errors.venueId}
-            hint="Just the clubs with a court for this sport. Its address comes with it."
+            hint="Clubs with a court for this sport, nearest to campus first. The address comes with it."
           >
             <select
               id={`${ids}-venue`}
@@ -261,11 +267,20 @@ export function CreateGameForm({
               className={inputClasses(Boolean(errors.venueId), "appearance-none pr-10")}
             >
               <option value="">Choose a club…</option>
-              {eligibleVenues.map((v) => (
-                <option key={v.id} value={v.id}>
-                  {v.name}
-                </option>
-              ))}
+              {/*
+                A native <option> renders one run of text, so the distance cannot
+                sit in a right hand column here the way it should. It follows the
+                name for now, and moves into its own column the moment this stops
+                being a select.
+              */}
+              {eligibleVenues.map((v) => {
+                const km = formatKm(kmFromCampus(v));
+                return (
+                  <option key={v.id} value={v.id}>
+                    {km ? `${v.name} · ${km}` : v.name}
+                  </option>
+                );
+              })}
             </select>
           </Field>
 
@@ -282,6 +297,12 @@ export function CreateGameForm({
                 {venue.country}
               </p>
               {venue.travel ? <p className="mt-1.5 text-ink-faint">{venue.travel}</p> : null}
+              {formatKm(kmFromCampus(venue)) ? (
+                <p className="mt-1.5 text-ink-faint">
+                  <span className="num text-ink-soft">{formatKm(kmFromCampus(venue))}</span> from
+                  campus in a straight line.
+                </p>
+              ) : null}
               <p className="mt-1.5 text-ink-faint">
                 {venue.area}. Has {roofSummary(venue)}.
               </p>
