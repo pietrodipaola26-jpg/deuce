@@ -79,7 +79,8 @@ export const onboardingSchema = profileBase
 /**
  * A game.
  *
- * `priceEuros` is taken as a decimal string and converted to integer cents in
+ * `totalEuros` is the whole court fee, taken as a decimal string and converted
+ * to integer cents in
  * the action. Money is never stored as a float: 8.10 is not representable in
  * binary floating point, and a court fee that renders as €8.099999 once is a
  * product nobody trusts with a split.
@@ -97,10 +98,12 @@ export const gameSchema = z
     levelMin: z.coerce.number().int().min(1).max(5),
     levelMax: z.coerce.number().int().min(1).max(5),
     spots: z.coerce.number().int().refine((v) => v === 2 || v === 4, "Two players or four."),
-    priceEuros: z
+    // The WHOLE court fee now, not a share. Four digits, because a peak padel
+    // court for ninety minutes is comfortably over a hundred euro at some clubs.
+    totalEuros: z
       .string()
       .trim()
-      .regex(/^\d{1,3}([.,]\d{1,2})?$/, "A number, like 9 or 9.50."),
+      .regex(/^\d{1,4}([.,]\d{1,2})?$/, "A number, like 40 or 40.50."),
     note: trimmed(280).optional().or(z.literal("")),
     provides: z.array(trimmed(40).min(1)).max(6).default([]),
   })

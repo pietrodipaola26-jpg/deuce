@@ -67,7 +67,8 @@ export type Database = {
           level_min: number
           minutes: number
           note: string | null
-          price_cents: number
+          total_cents: number
+          waiting: number
           provides: string[]
           sport: Database["public"]["Enums"]["sport"]
           spots: number
@@ -89,7 +90,8 @@ export type Database = {
           level_min: number
           minutes: number
           note?: string | null
-          price_cents: number
+          total_cents: number
+          waiting?: number
           provides?: string[]
           sport: Database["public"]["Enums"]["sport"]
           spots: number
@@ -111,7 +113,8 @@ export type Database = {
           level_min?: number
           minutes?: number
           note?: string | null
-          price_cents?: number
+          total_cents?: number
+          waiting?: number
           provides?: string[]
           sport?: Database["public"]["Enums"]["sport"]
           spots?: number
@@ -573,7 +576,11 @@ export type Database = {
     Views: {
       player_stats: {
         Row: {
+          games_hosted: number | null
+          games_hosted_played: number | null
           games_played: number | null
+          host_reliability: number | null
+          late_withdrawals: number | null
           no_shows: number | null
           player_id: string | null
           rating: number | null
@@ -613,7 +620,10 @@ export type Database = {
       is_member: { Args: never; Returns: boolean }
       is_moderator: { Args: never; Returns: boolean }
       join_game: { Args: { p_game_id: string }; Returns: undefined }
-      leave_game: { Args: { p_game_id: string }; Returns: undefined }
+      join_waitlist: { Args: { p_game_id: string }; Returns: undefined }
+      leave_game: { Args: { p_game_id: string; p_safety?: boolean }; Returns: undefined }
+      leave_waitlist: { Args: { p_game_id: string }; Returns: undefined }
+      my_waitlist_position: { Args: { p_game_id: string }; Returns: number }
       mark_attendance: {
         Args: {
           p_game_id: string

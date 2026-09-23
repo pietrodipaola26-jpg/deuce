@@ -60,7 +60,7 @@ export async function createGame(_previous: ActionState, formData: FormData): Pr
     levelMin: String(formData.get("levelMin") ?? ""),
     levelMax: String(formData.get("levelMax") ?? ""),
     spots: String(formData.get("spots") ?? ""),
-    priceEuros: String(formData.get("priceEuros") ?? ""),
+    totalEuros: String(formData.get("totalEuros") ?? ""),
     note: String(formData.get("note") ?? ""),
     provides: formData.getAll("provides").map(String),
   });
@@ -91,7 +91,7 @@ export async function createGame(_previous: ActionState, formData: FormData): Pr
       level_min: v.levelMin,
       level_max: v.levelMax,
       spots: v.spots,
-      price_cents: toCents(v.priceEuros),
+      total_cents: toCents(v.totalEuros),
       note: v.note || null,
       provides: v.provides,
     })
@@ -175,11 +175,23 @@ export async function joinGame(gameId: string): Promise<ActionState> {
   return { ok: true };
 }
 
-export async function leaveGame(gameId: string): Promise<ActionState> {
+/**
+ * Leaving a game.
+ *
+ * `safety` is the door described in migration 00016. A withdrawal marked this way
+ * costs the member nothing, reaches the moderators quietly, and reads to the host
+ * as an ordinary drop-out with no hint of why. It is available at any notice,
+ * because a concern that surfaces three hours before the game is exactly the one
+ * a penalty would otherwise pressure somebody into ignoring.
+ */
+export async function leaveGame(gameId: string, safety = false): Promise<ActionState> {
   await requireMember();
 
   const supabase = await createClient();
-  const { error } = await supabase.rpc("leave_game", { p_game_id: gameId });
+  const { error } = await supabase.rpc("leave_game", {
+    p_game_id: gameId,
+    p_safety: safety,
+  });
 
   if (error) {
     return {
@@ -190,6 +202,50 @@ export async function leaveGame(gameId: string): Promise<ActionState> {
   revalidatePath(`/games/${gameId}`);
   revalidatePath("/games");
   revalidatePath("/my-games");
+  return { ok: true };
+}
+
+/**
+ * Joining and leaving a waiting list.
+ *
+ * Both are thin: every rule about who may wait, how long the queue can get and
+ * what happens when a seat frees lives in the database, because a waiting list
+ * that is only correct when the client behaves is not a waiting list.
+ */
+export async function joinWaitlist(gameId: string): Promise<ActionState> {
+  const { userId } = await requireMember();
+
+  const limit = await checkRateLimit("join", userId);
+  if (!limit.ok) return { errors: { form: rateLimitMessage(limit.retryAfterSeconds) } };
+
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("join_waitlist", { p_game_id: gameId });
+
+  if (error) {
+    return {
+      errors: { form: readableError(error.message, "We could not put you on that waiting list.") },
+    };
+  }
+
+  revalidatePath(`/games/${gameId}`);
+  revalidatePath("/games");
+  return { ok: true, message: "You are on the waiting list." };
+}
+
+export async function leaveWaitlist(gameId: string): Promise<ActionState> {
+  await requireMember();
+
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("leave_waitlist", { p_game_id: gameId });
+
+  if (error) {
+    return {
+      errors: { form: readableError(error.message, "We could not take you off that waiting list.") },
+    };
+  }
+
+  revalidatePath(`/games/${gameId}`);
+  revalidatePath("/games");
   return { ok: true };
 }
 

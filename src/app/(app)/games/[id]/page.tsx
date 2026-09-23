@@ -2,7 +2,13 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
-import { AttendanceControl, CancelGameControl, JoinButton, LeaveButton } from "./game-actions";
+import {
+  AttendanceControl,
+  CancelGameControl,
+  JoinButton,
+  LeaveButton,
+  WaitlistControl,
+} from "./game-actions";
 import {
   AlertIcon,
   CalendarIcon,
@@ -25,12 +31,13 @@ import { ReportDialog } from "@/components/safety/report-dialog";
 import { buttonClasses } from "@/components/ui/button";
 import { Card, Chip, Eyebrow, Rule } from "@/components/ui/pieces";
 import { requireMember } from "@/lib/auth/session";
-import { getGame, listMessages, listMyRatings } from "@/lib/data/games";
+import { getGame, listMessages, listMyRatings, myWaitlistPosition } from "@/lib/data/games";
 import { getStatsFor } from "@/lib/data/players";
 import {
   formatDuration,
   formatFullDate,
   formatPrice,
+  shareOf,
   formatTime,
   hasEnded,
   hasStarted,
@@ -75,6 +82,9 @@ export default async function GamePage({ params }: { params: Promise<{ id: strin
   const ended = hasEnded(game.starts_at, game.minutes);
   const left = game.spots - game.taken;
   const full = left <= 0;
+
+  // Only asked for when it can matter. A game with a free seat has no queue.
+  const waitlistPosition = full && !isIn && !cancelled ? await myWaitlistPosition(game.id) : null;
 
   // Judged against the level for THIS game's sport: somebody can be a 4 at
   // tennis and a 2 at padel, and the two fit completely different games.
@@ -192,9 +202,24 @@ export default async function GamePage({ params }: { params: Promise<{ id: strin
               </span>
             </Fact>
             <Fact icon={<EuroIcon size={18} />} label="Cost">
-              <span className="num font-medium text-ink">{formatPrice(game.price_cents)}</span>
+              <span className="num font-medium text-ink">
+                {formatPrice(shareOf(game.total_cents, game.spots) ?? 0)}
+              </span>{" "}
+              <span className="text-ink-soft">each when it fills</span>
+              {game.taken > 0 && game.taken < game.spots ? (
+                <span className="block text-ink-soft">
+                  Right now <span className="num">{game.taken}</span>{" "}
+                  {game.taken === 1 ? "player" : "players"}, so{" "}
+                  <span className="num font-medium text-ink">
+                    {formatPrice(shareOf(game.total_cents, game.taken) ?? 0)}
+                  </span>{" "}
+                  each.
+                </span>
+              ) : null}
               <span className="block text-ink-faint">
-                The court fee, split evenly, paid at the venue. Deuce takes no cut.
+                <span className="num">{formatPrice(game.total_cents)}</span> for the court, split
+                evenly and paid at the venue. Shares are rounded up to the cent so the host is never
+                short. Deuce takes no cut.
               </span>
             </Fact>
             {game.provides.length > 0 ? (
@@ -355,14 +380,23 @@ export default async function GamePage({ params }: { params: Promise<{ id: strin
             ) : started ? (
               <p className="text-sm leading-relaxed text-ink-soft">This game has already started.</p>
             ) : full ? (
-              <div className="flex flex-col gap-3">
-                <p className="text-sm leading-relaxed text-ink-soft">
-                  Every seat is taken. Post one like it. A game at this hour on this court clearly
-                  fills.
-                </p>
-                <Link href="/games/new" className={buttonClasses("secondary", "md")}>
-                  Post a game like this
-                </Link>
+              <div className="flex flex-col gap-4">
+                <WaitlistControl
+                  gameId={game.id}
+                  position={waitlistPosition}
+                  waiting={game.waiting}
+                />
+                <div className="border-t border-hairline pt-4">
+                  <p className="text-sm leading-relaxed text-ink-faint">
+                    Or post one like it. A game at this hour on this court clearly fills.
+                  </p>
+                  <Link
+                    href="/games/new"
+                    className={buttonClasses("quiet", "md", "mt-3")}
+                  >
+                    Post a game like this
+                  </Link>
+                </div>
               </div>
             ) : doesNotPlaySport ? (
               <div className="flex flex-col gap-3">
@@ -391,7 +425,8 @@ export default async function GamePage({ params }: { params: Promise<{ id: strin
                 <JoinButton gameId={game.id} />
                 <p className="text-xs leading-relaxed text-ink-faint">
                   Joining opens the game thread and puts your name on the card. You can leave again, and
-                  you pay {formatPrice(game.price_cents).toLowerCase()} at the venue.
+                  you pay {formatPrice(shareOf(game.total_cents, game.spots) ?? 0).toLowerCase()} at
+                  the venue if it fills.
                 </p>
               </div>
             )}

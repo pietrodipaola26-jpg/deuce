@@ -12,6 +12,7 @@ import {
   formatDayMonth,
   formatDuration,
   formatPrice,
+  shareOf,
   formatRelativeDay,
   formatTime,
   playerName,
@@ -98,7 +99,7 @@ export function GameCard({
           ) : viewerIsIn ? (
             <Chip tone="accent">You are in</Chip>
           ) : full ? (
-            <Chip>Full</Chip>
+            <Chip>{game.waiting > 0 ? `Full · ${game.waiting} waiting` : "Full"}</Chip>
           ) : (
             <Chip tone="live">
               {left} {left === 1 ? "spot" : "spots"} left
@@ -146,7 +147,22 @@ export function GameCard({
         {/* ── Am I good enough, and what does it cost ─────────────────────── */}
         <div className="flex flex-wrap items-center justify-between gap-3 rounded-field bg-paper px-3 py-2.5">
           <LevelMeter min={game.level_min} max={game.level_max} />
-          <span className="num text-sm font-medium text-ink">{formatPrice(game.price_cents)}</span>
+          {/*
+            The headline is the share when the game fills, because that is what
+            happens in the normal case and because a price that moved every time
+            somebody joined would make the whole feed twitch. The live figure only
+            appears when it differs, which is exactly when somebody needs warning.
+          */}
+          <span className="text-right text-sm leading-tight">
+            <span className="num font-medium text-ink">
+              {formatPrice(shareOf(game.total_cents, game.spots) ?? 0)}
+            </span>
+            {game.taken > 0 && game.taken < game.spots ? (
+              <span className="num block text-xs font-normal text-ink-faint">
+                {formatPrice(shareOf(game.total_cents, game.taken) ?? 0)} with {game.taken}
+              </span>
+            ) : null}
+          </span>
         </div>
 
         {/* ── The host's own words ────────────────────────────────────────── */}

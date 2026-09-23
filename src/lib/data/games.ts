@@ -19,7 +19,7 @@ import type { Database } from "@/types/database.types";
  */
 const GAME_SELECT = `
   id, host_id, sport, surface, indoor, starts_at, minutes,
-  level_min, level_max, spots, taken, price_cents, note, provides,
+  level_min, level_max, spots, taken, waiting, total_cents, note, provides,
   status, cancelled_at, cancelled_reason, created_at,
   venue:venues!inner ( id, name, area, address, city, country, travel, is_verified, is_active ),
   players:game_players ( player_id, is_host, attendance,
@@ -206,4 +206,18 @@ export async function listMyRatings(gameId: string) {
     .select("ratee_id, stars, signal")
     .eq("game_id", gameId);
   return data ?? [];
+}
+
+/**
+ * Your place in a game's waiting list, or null when you are not on it.
+ *
+ * An RPC rather than a select, so the queue can be counted without publishing
+ * who is in it. How many people are waiting lives on the game row; who they are
+ * is nobody's business but a moderator's.
+ */
+export async function myWaitlistPosition(gameId: string): Promise<number | null> {
+  const supabase = await createClient();
+  const { data, error } = await supabase.rpc("my_waitlist_position", { p_game_id: gameId });
+  if (error) return null;
+  return data ?? null;
 }

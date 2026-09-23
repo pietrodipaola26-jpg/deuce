@@ -11,6 +11,8 @@ import { createGame, createVenue, type ActionState } from "@/lib/actions/games";
 import type { Venue } from "@/lib/data/games";
 import { LEVELS, sportLabel, sportsPlayed, type SportId, type SportLevels } from "@/lib/game/level";
 import { byDistanceFromCampus, formatKm, kmFromCampus } from "@/lib/game/distance";
+import { formatPrice, shareOf } from "@/lib/format";
+import { toCents } from "@/lib/validation";
 import { defaultRoof, roofOptions, roofSummary } from "@/lib/game/roof";
 import { SURFACES, surfacesForSport } from "@/lib/game/surface";
 import { cn } from "@/lib/cn";
@@ -87,6 +89,15 @@ export function CreateGameForm({
    * time React 19 reset the form after an action.
    */
   const whenRef = useRef<HTMLInputElement>(null);
+
+  /**
+   * A mirror of the court fee, for the line underneath that shows the division.
+   *
+   * Display only. The value that gets submitted is the input's own, so this
+   * cannot desynchronise into a wrong price: at worst the sentence under the box
+   * is briefly stale, which is a cosmetic problem rather than a money one.
+   */
+  const [totalEuros, setTotalEuros] = useState("40");
 
   /**
    * The clubs that have a court for this sport. One entry per club, because a
@@ -485,22 +496,36 @@ export function CreateGameForm({
 
           <Field
             id={`${ids}-price`}
-            label="Cost per player"
+            label="What does the court cost in total?"
             className="mt-5"
-            error={errors.priceEuros}
-            hint="The court fee split evenly, in euros. Deuce takes no cut, and nothing is paid through Deuce."
+            error={errors.totalEuros}
+            hint="The whole court fee, in euros. Deuce divides it. Nothing is paid through Deuce and Deuce takes no cut."
           >
             <div className="relative">
               <span className="num absolute top-1/2 left-4 -translate-y-1/2 text-ink-faint">€</span>
               <input
                 id={`${ids}-price`}
-                name="priceEuros"
+                name="totalEuros"
                 inputMode="decimal"
-                defaultValue="9"
-                className={inputClasses(Boolean(errors.priceEuros), "num pl-9")}
+                defaultValue="40"
+                onChange={(e) => setTotalEuros(e.target.value)}
+                className={inputClasses(Boolean(errors.totalEuros), "num pl-9")}
               />
             </div>
           </Field>
+
+          {/* The division, shown as they type, so nobody has to do it at eleven
+              at night. Rounded up, because a host who is short is the one outcome
+              a split must never produce. */}
+          {/^\d{1,4}([.,]\d{1,2})?$/.test(totalEuros.trim()) ? (
+            <p className="mt-2 text-sm text-ink-soft">
+              <span className="num font-medium text-ink">
+                {formatPrice(shareOf(toCents(totalEuros), spots) ?? 0)}
+              </span>{" "}
+              each across <span className="num">{spots}</span> players. Deuce rounds each share up to
+              the cent, so you are never left short.
+            </p>
+          ) : null}
         </Card>
 
         {/* ── Level ───────────────────────────────────────────────────────── */}

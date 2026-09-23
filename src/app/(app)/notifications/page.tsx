@@ -34,6 +34,12 @@ const ICONS = {
   report_filed: <ShieldIcon size={17} />,
   report_resolved: <ShieldIcon size={17} />,
   moderation_decision: <ShieldIcon size={17} />,
+  // A seat came free and you are in. The same tick as a game filling up, because
+  // for the person reading it this is the same good news.
+  waitlist_promoted: <CheckIcon size={17} />,
+  waitlist_joined: <UsersIcon size={17} />,
+  // Moderators only. Shield, like the rest of moderation.
+  safety_exit: <ShieldIcon size={17} />,
 } as const;
 
 /**

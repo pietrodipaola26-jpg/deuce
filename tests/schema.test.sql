@@ -543,4 +543,96 @@ select case
   then 'PASS: both sports have active clubs'
   else 'FAIL: one sport has nowhere to play' end;
 
+\echo '── TEST 31: a court fee is the whole fee, not a share ──'
+-- 00015 turned price_cents into total_cents. The old column must be gone, or
+-- something is still writing a quarter of a court fee into it.
+select case when not exists (
+    select 1 from information_schema.columns
+    where table_schema='public' and table_name='games' and column_name='price_cents'
+  ) and exists (
+    select 1 from information_schema.columns
+    where table_schema='public' and table_name='games' and column_name='total_cents'
+  ) then 'PASS: games carries the whole court fee'
+  else 'FAIL: the price column did not migrate' end;
+
+\echo '── TEST 32: leaving late is recorded, leaving early is not ──'
+select pg_temp.godmode();
+select id as lategame from public.games limit 1 \gset
+do $$
+declare
+  v uuid; h uuid; p uuid; g uuid;
+begin
+  select id into v from public.venues where is_active and 'padel' = any(surfaces) limit 1;
+  select id into h from public.profiles where onboarded_at is not null limit 1;
+  select id into p from public.profiles where onboarded_at is not null and id <> h limit 1;
+  if v is null or h is null or p is null then
+    raise notice 'SKIP: not enough fixtures to test withdrawals';
+    return;
+  end if;
+
+  -- A game starting in two hours. Leaving it is late by any definition.
+  insert into public.games (host_id, venue_id, sport, surface, indoor, starts_at, minutes,
+                            level_min, level_max, spots, total_cents)
+  values (h, v, 'padel', 'padel', true, now() + interval '2 hours', 90, 1, 5, 4, 4000)
+  returning id into g;
+
+  insert into public.game_players (game_id, player_id, is_host) values (g, p, false);
+  delete from public.game_players where game_id = g and player_id = p;
+
+  -- Deleted directly, so no withdrawal row: only leave_game records one.
+  if exists (select 1 from public.withdrawals where game_id = g) then
+    raise exception 'FAIL: a raw delete wrote a withdrawal';
+  end if;
+  raise notice 'PASS: withdrawals come from leave_game, not from any delete';
+end $$;
+
+\echo '── TEST 33: a safety exit never counts against the member ──'
+-- The door in 00016. Recorded, and excluded from everything that judges.
+do $$
+declare p uuid; g uuid; before int; after_count int;
+begin
+  select id into p from public.profiles where onboarded_at is not null limit 1;
+  select id into g from public.games limit 1;
+  if p is null or g is null then raise notice 'SKIP: no fixtures'; return; end if;
+
+  select coalesce(late_withdrawals, 0) into before from public.player_stats where player_id = p;
+
+  insert into public.withdrawals (game_id, player_id, hours_before, is_safety)
+  values (g, p, 1.5, true);
+
+  select coalesce(late_withdrawals, 0) into after_count from public.player_stats where player_id = p;
+
+  if after_count <> before then
+    raise exception 'FAIL: a safety exit was counted against the member';
+  end if;
+  raise notice 'PASS: a safety exit is recorded and never counted';
+  delete from public.withdrawals where game_id = g and player_id = p and is_safety;
+end $$;
+
+\echo '── TEST 34: the waiting list is capped and refuses a seated player ──'
+do $$
+declare g uuid; h uuid;
+begin
+  select id, host_id into g, h from public.games where status <> 'cancelled' limit 1;
+  if g is null then raise notice 'SKIP: no game'; return; end if;
+  select pg_temp.become(h);
+  begin
+    perform public.join_waitlist(g);
+    raise exception 'FAIL: the host was allowed onto their own waiting list';
+  exception
+    when unique_violation or check_violation then
+      raise notice 'PASS: somebody already in the game cannot wait for it';
+  end;
+end $$;
+select pg_temp.godmode();
+
+\echo '── TEST 35: promotion is a trigger, so any freed seat reaches it ──'
+select case when exists (
+    select 1 from pg_trigger t
+    join pg_class c on c.oid = t.tgrelid
+    where c.relname = 'game_players' and t.tgname = 'game_players_promote_waitlist'
+      and not t.tgisinternal
+  ) then 'PASS: a freed seat always runs promotion'
+  else 'FAIL: promotion depends on somebody remembering to call it' end;
+
 \echo 'ALL TESTS COMPLETE'

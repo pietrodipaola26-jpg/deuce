@@ -248,3 +248,18 @@ export function defaultGameStart(): string {
   const get = (t: string) => parts.find((p) => p.type === t)?.value ?? "01";
   return `${get("year")}-${get("month")}-${get("day")}T18:00`;
 }
+
+/**
+ * ONE COURT FEE, DIVIDED.
+ *
+ * Always rounds a share UP. 4000 cents across three is 1333.33, so everybody
+ * pays 1334 and the host collects two cents more than the court cost. Rounding
+ * down leaves the host out of pocket, which is the one outcome a split must
+ * never produce, and two cents is cheaper than that conversation.
+ *
+ * Returns null for a headcount of zero, which is a game nobody is in yet.
+ */
+export function shareOf(totalCents: number, people: number): number | null {
+  if (people <= 0) return null;
+  return Math.ceil(totalCents / people);
+}

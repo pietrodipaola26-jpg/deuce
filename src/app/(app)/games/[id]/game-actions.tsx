@@ -5,7 +5,14 @@ import { useState, useTransition } from "react";
 import { AlertIcon, ArrowRightIcon, CheckIcon } from "@/components/brand/icons";
 import { Button, buttonClasses } from "@/components/ui/button";
 import { FormError, textareaClasses } from "@/components/ui/field";
-import { cancelGame, joinGame, leaveGame, markAttendance } from "@/lib/actions/games";
+import {
+  cancelGame,
+  joinGame,
+  joinWaitlist,
+  leaveGame,
+  leaveWaitlist,
+  markAttendance,
+} from "@/lib/actions/games";
 import { cn } from "@/lib/cn";
 
 /**
@@ -58,33 +65,55 @@ export function LeaveButton({ gameId, startsSoon }: { gameId: string; startsSoon
    * people are about to be short a player is the point at which somebody should
    * be made to read one sentence.
    */
+  function go(safety: boolean) {
+    start(async () => {
+      setError(null);
+      const result = await leaveGame(gameId, safety);
+      if (result.errors?.form) {
+        setError(result.errors.form);
+        setConfirming(false);
+      }
+    });
+  }
+
   if (confirming || !startsSoon) {
     return (
       <div>
         <FormError>{error}</FormError>
         {confirming ? (
           <p className="mb-3 text-sm leading-relaxed text-warn">
-            This game starts within twelve hours. Leaving now posts a note in the thread so the others
-            know.
+            This game starts within twelve hours. Leaving now posts a note in the thread and goes on
+            your record.
           </p>
         ) : null}
-        <Button
-          weight="secondary"
-          size="md"
-          disabled={pending}
-          onClick={() =>
-            start(async () => {
-              setError(null);
-              const result = await leaveGame(gameId);
-              if (result.errors?.form) {
-                setError(result.errors.form);
-                setConfirming(false);
-              }
-            })
-          }
-        >
+        <Button weight="secondary" size="md" disabled={pending} onClick={() => go(false)}>
           {pending ? "Leaving…" : confirming ? "Yes, leave the game" : "Leave this game"}
         </Button>
+
+        {/*
+          THE DOOR.
+
+          The moment leaving late carries a cost, staying carries pressure, and
+          the person under that pressure is the one who has started to feel
+          uneasy about meeting a stranger at a court at night. So there is a way
+          out that costs nothing, at any notice.
+
+          It says as little as possible on the way out: the host sees an ordinary
+          drop-out with no hint of why, the thread says nothing, and only a
+          moderator is told. See migration 00016.
+        */}
+        <button
+          type="button"
+          disabled={pending}
+          onClick={() => go(true)}
+          className="mt-4 block rounded text-left text-sm text-ink-faint underline underline-offset-4 hover:text-ink-soft"
+        >
+          Something about this does not feel right
+        </button>
+        <p className="mt-1 text-xs leading-relaxed text-ink-faint">
+          Leaves the game with nothing on your record and tells a moderator quietly. Nobody else is
+          told anything.
+        </p>
       </div>
     );
   }
@@ -220,3 +249,72 @@ export function AttendanceControl({
 }
 
 export { buttonClasses };
+
+/**
+ * THE WAITING LIST.
+ *
+ * Leads with the position, because first in first out is only fair if you can
+ * see where you stand: somebody who knows they are second keeps the evening
+ * free, and somebody who knows they are ninth does not. Promotion is automatic
+ * and can happen at any notice, so getting off the list is one tap and sits
+ * right next to the number.
+ */
+export function WaitlistControl({
+  gameId,
+  position,
+  waiting,
+}: {
+  gameId: string;
+  /** Your place in the queue, or null when you are not on it. */
+  position: number | null;
+  waiting: number;
+}) {
+  const [pending, start] = useTransition();
+  const [error, setError] = useState<string | null>(null);
+
+  function run(fn: (id: string) => Promise<{ errors?: Record<string, string> }>) {
+    start(async () => {
+      setError(null);
+      const result = await fn(gameId);
+      if (result.errors?.form) setError(result.errors.form);
+    });
+  }
+
+  if (position !== null) {
+    return (
+      <div className="flex flex-col gap-3">
+        <FormError>{error}</FormError>
+        <p className="text-sm leading-relaxed text-ink-soft">
+          You are <span className="num font-medium text-ink">{position}</span> of{" "}
+          <span className="num font-medium text-ink">{waiting}</span> on the waiting list. If a place
+          comes free you go straight into the game and we tell you, so keep the time free or step off
+          the list.
+        </p>
+        <Button weight="quiet" size="md" disabled={pending} onClick={() => run(leaveWaitlist)}>
+          {pending ? "Leaving…" : "Leave the waiting list"}
+        </Button>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex flex-col gap-3">
+      <FormError>{error}</FormError>
+      <p className="text-sm leading-relaxed text-ink-soft">
+        Every seat is taken.{" "}
+        {waiting > 0 ? (
+          <>
+            <span className="num">{waiting}</span>{" "}
+            {waiting === 1 ? "person is" : "people are"} waiting for one.
+          </>
+        ) : (
+          "Nobody is waiting for one yet."
+        )}{" "}
+        If somebody drops out, the longest waiter goes in automatically.
+      </p>
+      <Button weight="secondary" size="md" disabled={pending} onClick={() => run(joinWaitlist)}>
+        {pending ? "Joining…" : "Join the waiting list"}
+      </Button>
+    </div>
+  );
+}
