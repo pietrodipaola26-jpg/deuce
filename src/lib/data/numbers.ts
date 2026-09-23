@@ -50,3 +50,14 @@ export async function getWeekly() {
   if (error) throw new Error(`Could not read the weeks: ${error.message}`);
   return data ?? [];
 }
+
+/**
+ * Failures, newest first. Route patterns and redacted messages only, so this
+ * carries no personal data. See migration 00019.
+ */
+export async function getErrors() {
+  const supabase = await createClient();
+  const { data, error } = await supabase.rpc("deuce_errors");
+  if (error) throw new Error(`Could not read the errors: ${error.message}`);
+  return data ?? [];
+}

@@ -3,8 +3,15 @@ import { notFound } from "next/navigation";
 
 import { Card, Eyebrow } from "@/components/ui/pieces";
 import { requireMember } from "@/lib/auth/session";
-import { getCourts, getHosts, getNumbers, getWeekly, type Metric } from "@/lib/data/numbers";
-import { playerName } from "@/lib/format";
+import {
+  getCourts,
+  getErrors,
+  getHosts,
+  getNumbers,
+  getWeekly,
+  type Metric,
+} from "@/lib/data/numbers";
+import { formatAgo, playerName } from "@/lib/format";
 import { cn } from "@/lib/cn";
 
 export const metadata: Metadata = {
@@ -33,11 +40,12 @@ export default async function NumbersPage() {
   const { profile } = await requireMember();
   if (!profile.is_moderator) notFound();
 
-  const [n, hosts, courts, weekly] = await Promise.all([
+  const [n, hosts, courts, weekly, errors] = await Promise.all([
     getNumbers(),
     getHosts(),
     getCourts(),
     getWeekly(),
+    getErrors(),
   ]);
 
   return (
@@ -51,6 +59,49 @@ export default async function NumbersPage() {
         are not counted as members, so your own signup is not adoption, but games you host do count,
         because a real game is real supply whoever posted it.
       </p>
+
+      {/*
+        FIRST, because everything below is a number and this is a job. An error
+        here has already happened to somebody who saw a broken page and left
+        without telling you.
+
+        Route patterns rather than paths, and messages with anything email or id
+        shaped stripped out, so nothing on this list identifies a member. See
+        migration 00019.
+      */}
+      <section className="mt-10">
+        <h2 className="font-display text-xl font-medium tracking-[-0.015em] text-ink">
+          What is broken
+        </h2>
+        <p className="mt-1 text-sm text-ink-faint">
+          A digest reaches your inbox at most once an hour, so a crash loop is one email.
+        </p>
+
+        {errors.length === 0 ? (
+          <p className="mt-4 rounded-field bg-paper px-3 py-3 text-sm text-ink-soft">
+            Nothing recorded. That is either good news or means nobody has used the site since the
+            last deploy.
+          </p>
+        ) : (
+          <ul className="mt-4 divide-y divide-hairline">
+            {errors.map((e) => (
+              <li key={`${e.route}-${e.message}`} className="py-3">
+                <div className="flex items-baseline justify-between gap-3">
+                  <code className="text-sm text-ink">{e.route}</code>
+                  <span className="num shrink-0 text-sm font-medium text-warn">
+                    {e.occurrences}x
+                  </span>
+                </div>
+                <p className="mt-1 text-sm leading-relaxed text-ink-soft">{e.message}</p>
+                <p className="mt-1 text-xs text-ink-faint">
+                  {e.source === "client" ? "In the browser" : "On the server"}
+                  {e.route_type ? `, ${e.route_type}` : ""}. Last {formatAgo(e.last_seen)}.
+                </p>
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
 
       {/* ── Supply ──────────────────────────────────────────────────────── */}
       <Section title="Supply" note="A feed with no games in it is the only way this fails.">

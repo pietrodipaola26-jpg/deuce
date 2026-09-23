@@ -83,3 +83,47 @@ export async function notifyModeratorOfReport(siteUrl: string): Promise<void> {
     console.error("[mail] could not send the moderator alert", error);
   }
 }
+
+/**
+ * THE ERROR DIGEST.
+ *
+ * Unlike the moderator nudge above, this one carries its content, and it can:
+ * the rows it is given hold route patterns and redacted messages, and no
+ * personal data by construction. See migration 00019 and src/lib/errors.ts.
+ *
+ * It is a digest rather than an alert per failure because failures repeat. The
+ * database only hands rows to this function once an hour, so a crash loop that
+ * fires four thousand times produces one email.
+ */
+export async function sendErrorDigest(
+  rows: { message: string; route: string; source: string; occurrences: number }[],
+): Promise<void> {
+  const cfg = config();
+  if (!cfg || rows.length === 0) {
+    console.info("[mail] no SMTP configured, skipping the error digest");
+    return;
+  }
+
+  const total = rows.reduce((sum, r) => sum + r.occurrences, 0);
+  const lines = rows
+    .map((r) => `${r.occurrences} x  ${r.route}  (${r.source})\n    ${r.message}`)
+    .join("\n\n");
+
+  try {
+    const transport = nodemailer.createTransport({
+      host: cfg.host,
+      port: cfg.port,
+      secure: cfg.port === 465,
+      auth: { user: cfg.user, pass: cfg.password },
+    });
+
+    await transport.sendMail({
+      from: cfg.user,
+      to: cfg.to,
+      subject: `Deuce: ${rows.length} error${rows.length === 1 ? "" : "s"}, ${total} occurrence${total === 1 ? "" : "s"}`,
+      text: `${lines}\n\nThe full list is on the numbers page.\n`,
+    });
+  } catch (error) {
+    console.error("[mail] could not send the error digest", error);
+  }
+}

@@ -61,6 +61,45 @@ export type Database = {
         Update: { day?: string; game_id?: string; views?: number }
         Relationships: []
       }
+      error_log: {
+        Row: {
+          fingerprint: string
+          first_seen: string
+          last_seen: string
+          message: string
+          method: string | null
+          notified_at: string | null
+          occurrences: number
+          route: string
+          route_type: string | null
+          source: string
+        }
+        Insert: {
+          fingerprint: string
+          first_seen?: string
+          last_seen?: string
+          message: string
+          method?: string | null
+          notified_at?: string | null
+          occurrences?: number
+          route: string
+          route_type?: string | null
+          source?: string
+        }
+        Update: {
+          fingerprint?: string
+          first_seen?: string
+          last_seen?: string
+          message?: string
+          method?: string | null
+          notified_at?: string | null
+          occurrences?: number
+          route?: string
+          route_type?: string | null
+          source?: string
+        }
+        Relationships: []
+      }
       games: {
         Row: {
           cancelled_at: string | null
@@ -616,6 +655,38 @@ export type Database = {
       }
     }
     Functions: {
+      claim_error_digest: {
+        Args: never
+        Returns: {
+          last_seen: string
+          message: string
+          occurrences: number
+          route: string
+          source: string
+        }[]
+      }
+      deuce_errors: {
+        Args: never
+        Returns: {
+          first_seen: string
+          last_seen: string
+          message: string
+          occurrences: number
+          route: string
+          route_type: string | null
+          source: string
+        }[]
+      }
+      record_error: {
+        Args: {
+          p_message: string
+          p_method?: string | null
+          p_route: string
+          p_route_type?: string | null
+          p_source?: string
+        }
+        Returns: undefined
+      }
       deuce_courts: {
         Args: never
         Returns: { area: string; games: number; name: string; played: number }[]

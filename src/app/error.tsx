@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect } from "react";
 
 import { Button, buttonClasses } from "@/components/ui/button";
+import { reportClientError } from "@/lib/actions/errors";
 import { Eyebrow } from "@/components/ui/pieces";
 
 /**
@@ -23,6 +24,9 @@ export default function Error({
 }) {
   useEffect(() => {
     console.error("[app] unhandled error", { digest: error.digest, message: error.message });
+    // And to the operator, who is not looking at this person's console. Sends a
+    // message and a digest, never a stack or a URL: see the action's own note.
+    void reportClientError(error.message, error.digest);
   }, [error]);
 
   return (
