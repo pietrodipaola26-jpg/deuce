@@ -249,6 +249,26 @@ export async function leaveWaitlist(gameId: string): Promise<ActionState> {
   return { ok: true };
 }
 
+/**
+ * Count one opening of a game page.
+ *
+ * Anonymous by construction: the database function stores a game, a date and a
+ * number, and nothing about who called it. It also declines to count the host
+ * and anybody already in the game, so the figure means "somebody outside this
+ * game looked at it" rather than "somebody refreshed".
+ *
+ * Deliberately does not revalidate. Nothing on the page depends on the count,
+ * and revalidating on every view would rebuild a page for a number only the
+ * moderator will ever read.
+ */
+export async function recordGameView(gameId: string): Promise<void> {
+  await requireMember();
+  const supabase = await createClient();
+  // Failure here is not worth telling anybody about: the page is already
+  // rendered and a missed tally is a smaller problem than an error toast.
+  await supabase.rpc("record_game_view", { p_game_id: gameId });
+}
+
 export async function cancelGame(gameId: string, reason: string): Promise<ActionState> {
   await requireMember();
 

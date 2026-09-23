@@ -55,6 +55,12 @@ export type Database = {
           },
         ]
       }
+      game_views: {
+        Row: { day: string; game_id: string; views: number }
+        Insert: { day: string; game_id: string; views?: number }
+        Update: { day?: string; game_id?: string; views?: number }
+        Relationships: []
+      }
       games: {
         Row: {
           cancelled_at: string | null
@@ -610,6 +616,39 @@ export type Database = {
       }
     }
     Functions: {
+      deuce_courts: {
+        Args: never
+        Returns: { area: string; games: number; name: string; played: number }[]
+      }
+      deuce_hosts: {
+        Args: never
+        Returns: {
+          first_name: string | null
+          games: number
+          last_initial: string | null
+          played: number
+          player_id: string
+        }[]
+      }
+      deuce_numbers: {
+        Args: never
+        Returns: {
+          all_time: number
+          last_week: number | null
+          metric: string
+          this_week: number | null
+        }[]
+      }
+      deuce_weekly: {
+        Args: never
+        Returns: {
+          games_created: number
+          games_played: number
+          signups: number
+          week_start: string
+        }[]
+      }
+      record_game_view: { Args: { p_game_id: string }; Returns: undefined }
       cancel_game: {
         Args: { p_game_id: string; p_reason?: string }
         Returns: undefined

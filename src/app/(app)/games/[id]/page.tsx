@@ -30,6 +30,7 @@ import { PlayerRow } from "@/components/player/player-card";
 import { ReportDialog } from "@/components/safety/report-dialog";
 import { buttonClasses } from "@/components/ui/button";
 import { Card, Chip, Eyebrow, Rule } from "@/components/ui/pieces";
+import { CountView } from "@/components/app/count-view";
 import { requireMember } from "@/lib/auth/session";
 import { getGame, listMessages, listMyRatings, myWaitlistPosition } from "@/lib/data/games";
 import { getStatsFor } from "@/lib/data/players";
@@ -157,6 +158,9 @@ export default async function GamePage({ params }: { params: Promise<{ id: strin
       </header>
 
       <div className="mt-10 grid gap-10 lg:grid-cols-[1.15fr_0.85fr] lg:gap-12">
+        {/* Anonymous, and never counts the host or anybody already in. */}
+        <CountView gameId={game.id} />
+
         <div className="flex flex-col gap-8">
           {/* ── The facts ──────────────────────────────────────────────────── */}
           <Card className="divide-y divide-hairline">

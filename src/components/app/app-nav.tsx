@@ -138,6 +138,11 @@ export function AppNav({
                           <CountBadge count={unseenReports} small />
                         </span>
                       </MenuLink>
+                      {/* No badge. A number is not an alert, and a badge here
+                          would have you opening it out of reflex. */}
+                      <MenuLink href="/numbers" onNavigate={() => setOpen(false)}>
+                        Numbers
+                      </MenuLink>
                     </>
                   ) : null}
                   <div className="my-1 h-px bg-hairline" />
