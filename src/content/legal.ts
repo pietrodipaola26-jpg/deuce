@@ -200,7 +200,8 @@ export const LEGAL_DOCS: LegalDoc[] = [
         heading: "Where it is held, and who else touches it",
         body: [
           "Deuce runs on Vercel and stores data in Supabase (PostgreSQL), hosted in the EU. Upstash is used to limit how often anyone can ask for a log in link, and holds only a counter against a hashed identifier.",
-          "Google, because sign in codes are sent through a Gmail mailbox. Google therefore handles your email address and the code itself in transit. The same mailbox receives a notice when a report is filed, which deliberately contains no names and no report text.",
+          "Resend, because sign in codes are sent through it. Resend therefore handles your email address and the code itself in transit, and keeps a delivery log of the address and whether the message arrived.",
+          "Cloudflare, which provides the domain's DNS and forwards mail sent to our published addresses on to a mailbox we read, which is provided by Google. It handles anything you choose to write to us, and the notice we send ourselves when a report is filed, which deliberately contains no names and no report text.",
           "These are processors acting on our instructions. Nobody else receives your data, and none of it is sold, ever.",
           "Cookies: one session cookie so you stay signed in, and nothing else. There is no analytics or advertising cookie. The cookie page lists it in full.",
         ],
