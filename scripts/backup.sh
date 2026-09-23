@@ -142,3 +142,35 @@ fi
 
 echo "Backup complete and checked: $OUT"
 echo "  accounts: ${users:-0}   venues: ${venues:-0}"
+
+# ── Seal it, so it can safely leave this machine ───────────────────────────
+#
+# data.sql holds every member's email address and the whole of auth.users. Drag
+# that into iCloud or Drive as it stands and Apple or Google is now processing
+# your members' personal data, which is a processor you would have to name in the
+# privacy policy. Encrypt it here and the cloud holds ciphertext instead: the
+# plaintext never leaves this disk and nothing in the legal pages changes.
+#
+# AES-256 with PBKDF2 at 600k iterations. LibreSSL, which ships with macOS. Not
+# `zip -e`, whose legacy ZipCrypto has been broken for decades.
+#
+# Aborting here is fine. The loose files above are already complete and checked.
+
+echo
+ARCHIVE="$DEST/deuce-$STAMP.tar.gz.enc"
+echo "Sealing an encrypted copy you can put in iCloud, Drive or on a USB stick."
+echo "Choose a passphrase and keep it in your password manager. Lose it and the"
+echo "archive is gone: there is no recovery, which is the point."
+echo
+
+if tar -czf - -C "$OUT" roles.sql schema.sql data.sql \
+   | openssl enc -aes-256-cbc -pbkdf2 -iter 600000 -salt -out "$ARCHIVE" 2>/dev/null
+then
+  echo "Sealed: $ARCHIVE  ($(du -h "$ARCHIVE" | cut -f1))"
+  echo
+  echo "To open it again:"
+  echo "  openssl enc -d -aes-256-cbc -pbkdf2 -iter 600000 -in <file> | tar -xzf - -C <dir>"
+else
+  echo "No encrypted archive was made. The plain files in $OUT are still complete."
+  echo "Do not copy them anywhere shared without encrypting them first."
+fi

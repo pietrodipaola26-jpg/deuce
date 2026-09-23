@@ -39,9 +39,21 @@ rewrites a column.
 
 ## 3. Restoring
 
+**Restore into a Supabase-provisioned database. Never a bare one.** This is not a
+style preference and it is the single thing most likely to waste an afternoon
+during a real recovery.
+
+A Supabase dump assumes the `extensions`, `auth` and `vault` schemas and the
+`supabase_realtime` publication already exist, because the platform creates all
+four when you make a project. Restore into an empty PostgreSQL database and
+`CREATE TABLE public.venues` fails on its `extensions.gen_random_uuid()` default,
+then every table, policy and trigger that depends on venues fails after it. We
+proved this: the first rehearsal produced 110 errors and 6 tables. The same files
+into a provisioned database produced 0 errors and everything.
+
 Order matters. Roles first or every grant has nothing to grant to.
 
-1. Create a new Supabase project, or reset the existing one
+1. Create a new Supabase project. Do not skip this and use any Postgres
 2. `psql "<connection string>" -f roles.sql`
 3. `psql "<connection string>" -f schema.sql`
 4. `psql "<connection string>" -f data.sql`
@@ -116,8 +128,23 @@ none of them should be.
 
 ---
 
-## 7. The thing people skip
+## 7. Rehearsing it
 
-**A backup nobody has restored is a hope.** Rehearse it into a local Supabase at
-least once, and again after any migration that changes the shape of the data.
-The rehearsal is the only step that proves any of the rest of this works.
+**A backup nobody has restored is a hope.**
+
+```
+./scripts/restore-rehearsal.sh
+supabase db reset          # afterwards, to put your local dev database back
+```
+
+It loads the most recent backup into the running local Supabase, having first
+emptied the public schema and auth.users so the target matches a fresh project.
+It then counts what arrived and fails loudly if the accounts did not.
+
+It wipes your local dev database, which is safe: that holds only seed data.
+It never touches production.
+
+Run it after any migration that changes the shape of the data.
+
+Last rehearsed: 23 September 2026. 11 tables, 23 RLS policies, 12 triggers,
+23 venues, 1 account, zero errors.
