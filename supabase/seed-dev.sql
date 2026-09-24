@@ -26,6 +26,10 @@
 --
 -- Re-runnable: it clears every invented person first, which cascades to their
 -- games, messages, ratings and reports. Courts are left alone.
+--
+-- ATTENDANCE IS SEEDED AS SIGNALS, not verdicts. See the three cases below:
+-- a clean game, a host who did not turn up, and a contested accusation that
+-- deliberately records nothing.
 -- ============================================================================
 
 -- ── Wipe whatever a previous run left ──────────────────────────────────────
@@ -180,9 +184,53 @@ begin
   insert into public.game_players (game_id, player_id) values (g_noshow, ines), (g_noshow, luca), (g_noshow, adam);
   update public.games set starts_at = now() - interval '12 days' where id = g_noshow;
 
-  update public.game_players set attendance = 'played'
-   where game_id in (g_past_full, g_past_short, g_noshow);
-  update public.game_players set attendance = 'no_show' where game_id = g_noshow and player_id = adam;
+  -- ── Attendance, as real signals rather than a decree ─────────────────────
+  --
+  -- Nothing below writes game_players.attendance. Since 00020 that column is
+  -- derived: a trigger recomputes it from these rows, so the fixtures exercise
+  -- the actual rules rather than asserting a result the rules might disagree
+  -- with. Three cases on purpose.
+
+  -- CASE 1. An ordinary game. Everybody says everybody was there, so everybody
+  -- reads as played. One signal is enough for that and nobody is harmed by it.
+  insert into public.attendance_reports (game_id, reporter_id, subject_id, state) values
+    (g_past_full, mara,  luca,  'played'),
+    (g_past_full, mara,  yuki,  'played'),
+    (g_past_full, mara,  tomas, 'played'),
+    (g_past_full, luca,  mara,  'played'),
+    (g_past_full, yuki,  mara,  'played'),
+    (g_past_full, tomas, mara,  'played');
+
+  -- CASE 2. THE HOST DID NOT TURN UP. Impossible to record before 00020, and
+  -- the worst kind of no-show, because the court was booked in their name and
+  -- two people arranged an evening around it. Both other players say so, which
+  -- is exactly the two agreeing signals the rule asks for.
+  insert into public.attendance_reports (game_id, reporter_id, subject_id, state) values
+    (g_past_short, mara, sofia, 'no_show'),
+    (g_past_short, adam, sofia, 'no_show'),
+    (g_past_short, sofia, mara, 'played'),
+    (g_past_short, sofia, adam, 'played');
+
+  -- CASE 3. A confirmed absence, and a contested one, in the same game.
+  --
+  -- Adam is absent and three people say so, so he reads as no_show. Adam then
+  -- says Luca was absent too and Ines agrees, but the host says Luca was there.
+  -- Two against one, and it still records NOTHING, because a claim anybody
+  -- contradicts is an allegation rather than evidence.
+  --
+  -- This is the retaliation shape the corroboration rule exists for: the person
+  -- with the worst record is the person most motivated to damage somebody
+  -- else's, and one voice must never be enough to do it.
+  insert into public.attendance_reports (game_id, reporter_id, subject_id, state) values
+    (g_noshow, tomas, adam,  'no_show'),
+    (g_noshow, ines,  adam,  'no_show'),
+    (g_noshow, luca,  adam,  'no_show'),
+    (g_noshow, adam,  luca,  'no_show'),
+    (g_noshow, ines,  luca,  'no_show'),
+    (g_noshow, tomas, luca,  'played'),
+    (g_noshow, tomas, ines,  'played'),
+    (g_noshow, luca,  ines,  'played'),
+    (g_noshow, ines,  tomas, 'played');
 
   -- 10. A long thread, which is the phone keyboard test.
   insert into public.games (host_id, venue_id, sport, surface, indoor, starts_at, minutes,
