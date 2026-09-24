@@ -84,15 +84,57 @@ Recreate these by hand after any restore. **None of it is in the dump.**
 
 **Authentication, Email Templates**
 
-Both **Magic Link** and **Confirm signup** were edited to send a numeric code
-rather than a link. They use `{{ .Token }}`, not `{{ .ConfirmationURL }}`. A
-restored project reverts to the stock link templates and sign-in silently breaks:
-the form asks for a code and the email contains a link. Paste the current bodies
-in below so this is recoverable.
+**The source of truth is in this repository**, not here and not in the dashboard:
 
-> TO FILL IN: copy both template bodies here after any edit.
+```
+supabase/templates/magic-link.html      sign in
+supabase/templates/confirmation.html    first sign up
+```
+
+Both send a numeric code using `{{ .Token }}`, never `{{ .ConfirmationURL }}`.
+`supabase/config.toml` points local development at the same two files, so a local
+sign in exercises the real wording rather than a stock template.
+
+**After any restore, paste both files into the dashboard by hand.** Email
+templates are GoTrue configuration rather than table rows, so they are not in the
+database and not in the backup. A restored project reverts to the stock link
+templates and sign in breaks silently in a way that points at the wrong thing:
+the email contains a link, the form asks for a code, and the code is nowhere. The
+person restoring will not notice, because their own session came back with
+everything else. The next person to sign up will.
+
+Worth re-checking once in a while that the dashboard still matches these files.
+Nothing enforces it.
+
+**Do NOT run `supabase config push` to do this.** See the warning below.
 
 ---
+
+## 4b. Why `supabase config push` is not the answer
+
+The CLI can push `config.toml` to the linked project, and it looks like the
+obvious way to keep templates in sync. It is not, because it pushes the **whole**
+auth section, and this repository's `config.toml` is deliberately tuned for local
+development. Measured against production on 24 September 2026, a push would have
+changed:
+
+| Setting | Production | What a push would set |
+|---|---|---|
+| `auth.site_url` | `https://deucematch.uk` | `http://localhost:3000` |
+| `auth.additional_redirect_urls` | `https://deucematch.uk/**` | `127.0.0.1:3000/auth/callback` |
+| `db.major_version` | 17 | 15 |
+
+The first two break sign in for everybody. Use `supabase config diff`, which is
+read only, to see the current delta before ever considering it.
+
+Making this safe means teaching `config.toml` about environments, with the
+production values read from variables rather than hard coded. That is a real
+piece of work and has not been done.
+
+**Also noted from that diff:** local Postgres is major version 15 and production
+is 17. Every migration so far has applied cleanly to both, but the two are not
+the same database and a feature added in 16 or 17 would pass locally and fail on
+push, or the reverse.
 
 ## 5. Vercel environment variables
 
