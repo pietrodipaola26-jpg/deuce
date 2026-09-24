@@ -142,6 +142,54 @@
     text-rendering: optimizeLegibility;
   }
 
+  /* DATE AND TIME INPUTS, WHICH SAFARI DRAWS ITS OWN WAY.
+     ------------------------------------------------------------------
+     On iOS these controls ignore the width they are given. They carry an
+     intrinsic minimum width that is wider than a 375px column, so the field
+     pushes past the card it sits in and the page ends up scrolling sideways.
+     The value inside is a shadow element that Safari right aligns and gives its
+     own margin, so the text does not line up with any other field on the form.
+
+     None of this is reachable from a utility class, because the parts live in
+     the control's shadow DOM. It belongs here, next to the other corrections
+     for things browsers do rather than things this product decided.
+
+     min-width: 0 is the one that actually fixes the overflow. appearance: none
+     is what makes the control accept the height and border everything else has. */
+  input[type="date"],
+  input[type="time"],
+  input[type="datetime-local"] {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  input[type="date"]::-webkit-date-and-time-value,
+  input[type="time"]::-webkit-date-and-time-value,
+  input[type="datetime-local"]::-webkit-date-and-time-value {
+    text-align: left;
+    margin: 0;
+  }
+
+  /* Safari pads the editable segments, which is what makes the text sit low in
+     a box whose height is set elsewhere. */
+  input[type="date"]::-webkit-datetime-edit,
+  input[type="time"]::-webkit-datetime-edit,
+  input[type="datetime-local"]::-webkit-datetime-edit {
+    padding: 0;
+  }
+
+  /* The picker button has its own intrinsic size and sits wherever it likes.
+     Pushed to the end so the control reads left to right like every other
+     field. */
+  input[type="date"]::-webkit-calendar-picker-indicator,
+  input[type="time"]::-webkit-calendar-picker-indicator,
+  input[type="datetime-local"]::-webkit-calendar-picker-indicator {
+    margin-inline-start: auto;
+  }
+
   /* One focus ring, on every focusable thing, never removed. Drawn in the deep
      leaf green rather than the acid, because the acid ring disappears against
      a white page at exactly the moment it is needed. */

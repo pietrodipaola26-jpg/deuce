@@ -26,7 +26,18 @@ export function Field({
   optional?: boolean;
 }) {
   return (
-    <div className={cn("flex flex-col", className)}>
+    /*
+      min-w-0 is not decoration. A flex or grid item defaults to
+      `min-width: auto`, which means it grows to fit the intrinsic minimum of
+      whatever is inside it and ignores the width of its container. Controls
+      Safari draws itself, datetime-local above all, carry an intrinsic minimum
+      far wider than a phone column, so without this the field stretches, then
+      the grid, then the card, and the page scrolls sideways.
+
+      It belongs here rather than on one form: any Field can hold such a control,
+      and a fix that has to be remembered is a fix that will be forgotten.
+    */
+    <div className={cn("flex min-w-0 flex-col", className)}>
       <label htmlFor={id} className="text-sm font-medium text-ink">
         {label}
         {optional ? <span className="ml-1.5 font-normal text-ink-faint">optional</span> : null}
