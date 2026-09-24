@@ -263,3 +263,17 @@ export function shareOf(totalCents: number, people: number): number | null {
   if (people <= 0) return null;
   return Math.ceil(totalCents / people);
 }
+
+/**
+ * Is a finished game still inside the window for saying who turned up?
+ *
+ * Lives here for the same reason every other clock read does: React 19 treats a
+ * `Date.now()` in a component body as an impure call and the lint refuses it,
+ * correctly, because a render that reads the clock is a render that can differ
+ * from itself. Wrapped in a helper, it is called once and the component stays
+ * pure.
+ */
+export function withinDaysOfEnd(startsAt: string, minutes: number, days: number): boolean {
+  const endedAt = new Date(startsAt).getTime() + minutes * 60_000;
+  return Date.now() < endedAt + days * 24 * 60 * 60 * 1000;
+}

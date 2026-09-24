@@ -32,13 +32,20 @@ import { buttonClasses } from "@/components/ui/button";
 import { Card, Chip, Eyebrow, Rule } from "@/components/ui/pieces";
 import { CountView } from "@/components/app/count-view";
 import { requireMember } from "@/lib/auth/session";
-import { getGame, listMessages, listMyRatings, myWaitlistPosition } from "@/lib/data/games";
+import {
+  getGame,
+  listMessages,
+  listMyRatings,
+  myAttendanceMarks,
+  myWaitlistPosition,
+} from "@/lib/data/games";
 import { getStatsFor } from "@/lib/data/players";
 import {
   formatDuration,
   formatFullDate,
   formatPrice,
   shareOf,
+  withinDaysOfEnd,
   formatTime,
   hasEnded,
   hasStarted,
@@ -86,6 +93,18 @@ export default async function GamePage({ params }: { params: Promise<{ id: strin
 
   // Only asked for when it can matter. A game with a free seat has no queue.
   const waitlistPosition = full && !isIn && !cancelled ? await myWaitlistPosition(game.id) : null;
+
+  /*
+    Attendance is now corroborated rather than decreed: anybody who was in the
+    game can say who else was, including about the host, and a no-show needs two
+    people who agree. See migration 00020.
+
+    The window is seven days. Open for ever invites grudges, and asking somebody
+    to remember an evening from two months ago is asking them to guess.
+  */
+  const canMarkAttendance =
+    isIn && ended && !cancelled && withinDaysOfEnd(game.starts_at, game.minutes, 7);
+  const myMarks = canMarkAttendance ? await myAttendanceMarks(game.id) : null;
 
   // Judged against the level for THIS game's sport: somebody can be a 4 at
   // tennis and a 2 at padel, and the two fit completely different games.
@@ -275,11 +294,13 @@ export default async function GamePage({ params }: { params: Promise<{ id: strin
                       </>
                     }
                     action={
-                      isHost && ended && p.player_id !== userId ? (
+                      canMarkAttendance && p.player_id !== userId ? (
                         <AttendanceControl
                           gameId={game.id}
                           playerId={p.player_id}
-                          current={p.attendance}
+                          /* Yours, not the group's. The note beside the name
+                             already carries what everybody concluded. */
+                          mine={myMarks?.get(p.player_id) ?? null}
                         />
                       ) : null
                     }

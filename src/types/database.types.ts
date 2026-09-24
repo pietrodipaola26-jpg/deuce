@@ -61,6 +61,30 @@ export type Database = {
         Update: { day?: string; game_id?: string; views?: number }
         Relationships: []
       }
+      attendance_reports: {
+        Row: {
+          created_at: string
+          game_id: string
+          reporter_id: string
+          state: Database["public"]["Enums"]["attendance"]
+          subject_id: string
+        }
+        Insert: {
+          created_at?: string
+          game_id: string
+          reporter_id: string
+          state: Database["public"]["Enums"]["attendance"]
+          subject_id: string
+        }
+        Update: {
+          created_at?: string
+          game_id?: string
+          reporter_id?: string
+          state?: Database["public"]["Enums"]["attendance"]
+          subject_id?: string
+        }
+        Relationships: []
+      }
       error_log: {
         Row: {
           fingerprint: string
@@ -655,6 +679,22 @@ export type Database = {
       }
     }
     Functions: {
+      attendance_signals: {
+        Args: { p_game_id: string }
+        Returns: {
+          created_at: string
+          reporter_id: string
+          state: Database["public"]["Enums"]["attendance"]
+          subject_id: string
+        }[]
+      }
+      my_attendance_marks: {
+        Args: { p_game_id: string }
+        Returns: {
+          state: Database["public"]["Enums"]["attendance"]
+          subject_id: string
+        }[]
+      }
       claim_error_digest: {
         Args: never
         Returns: {

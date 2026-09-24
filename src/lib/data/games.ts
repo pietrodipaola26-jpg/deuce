@@ -221,3 +221,25 @@ export async function myWaitlistPosition(gameId: string): Promise<number | null>
   if (error) return null;
   return data ?? null;
 }
+
+/**
+ * What YOU have said about who turned up to this game.
+ *
+ * Not the verdict. The verdict on each player is derived from everybody's
+ * signals and lives on game_players; this is only your own contribution, so the
+ * buttons can show what you personally said rather than what the group
+ * concluded. Those are different facts and drawing them the same way would tell
+ * somebody their opinion had been overruled when it had not. See 00020.
+ */
+export async function myAttendanceMarks(gameId: string) {
+  const supabase = await createClient();
+  const { data, error } = await supabase.rpc("my_attendance_marks", { p_game_id: gameId });
+  if (error) return new Map<string, "played" | "no_show">();
+  return new Map(
+    (data ?? [])
+      .filter((r): r is { subject_id: string; state: "played" | "no_show" } =>
+        r.state === "played" || r.state === "no_show",
+      )
+      .map((r) => [r.subject_id, r.state]),
+  );
+}

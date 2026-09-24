@@ -196,20 +196,30 @@ export function CancelGameControl({ gameId }: { gameId: string }) {
 export function AttendanceControl({
   gameId,
   playerId,
-  current,
+  mine,
 }: {
   gameId: string;
   playerId: string;
-  current: "unknown" | "played" | "no_show";
+  /** What YOU said, not what the group concluded. Null means you have not said. */
+  mine: "played" | "no_show" | null;
 }) {
   const [pending, start] = useTransition();
-  const [state, setState] = useState(current);
+  const [state, setState] = useState<"played" | "no_show" | null>(mine);
 
+  /**
+   * Pressing the answer you already gave withdraws it.
+   *
+   * It has to be possible. You are being asked about somebody's reputation from
+   * memory, and a person who realises they misremembered, or who tapped the
+   * wrong row, must be able to take it back. 'unknown' is how the database
+   * spells no opinion, and it deletes the row rather than recording one.
+   */
   const set = (next: "played" | "no_show") =>
     start(async () => {
       const previous = state;
-      setState(next); // Optimistic: the host is marking four people in a row.
-      const result = await markAttendance(gameId, playerId, next);
+      const target = state === next ? null : next;
+      setState(target); // Optimistic: people mark three others in a row.
+      const result = await markAttendance(gameId, playerId, target ?? "unknown");
       if (result.errors?.form) setState(previous);
     });
 
