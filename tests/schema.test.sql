@@ -130,11 +130,14 @@ select id as hard_court  from public.venues where 'hard' = any(surfaces) limit 1
 select set_config('deuce.hard', :'hard_court', false), set_config('deuce.mara', :'mara', false),
        set_config('deuce.tomas', :'tomas', false), set_config('deuce.padel', :'padel_court', false);
 
+-- total_cents is the WHOLE COURT, not a share: 00015 renamed price_cents and
+-- multiplied every existing row by spots. These figures are 4 x 9.00 and, below,
+-- 2 x 8.00, so the per-person price the cards show is unchanged.
 select pg_temp.become(:'tomas');
 insert into public.games (host_id, venue_id, sport, surface, indoor, starts_at, minutes,
-                          level_min, level_max, spots, price_cents, note, provides)
+                          level_min, level_max, spots, total_cents, note, provides)
 values (:'tomas', :'padel_court', 'padel', 'padel', true, now() + interval '3 days', 90,
-        2, 3, 4, 900, 'Relaxed game. Two of us started this term.', '{Balls,"Two spare racquets"}')
+        2, 3, 4, 3600, 'Relaxed game. Two of us started this term.', '{Balls,"Two spare racquets"}')
 returning id as g1 \gset
 select set_config('deuce.g1', :'g1', false);
 
@@ -178,9 +181,9 @@ end $$;
 do $$
 begin
   insert into public.games (host_id, venue_id, sport, surface, indoor, starts_at, minutes,
-                            level_min, level_max, spots, price_cents)
+                            level_min, level_max, spots, total_cents)
   values (auth.uid(), current_setting('deuce.padel')::uuid, 'padel', 'padel', true,
-          now() + interval '2 days', 90, 1, 5, 4, 900);
+          now() + interval '2 days', 90, 1, 5, 4, 3600);
   raise exception 'FAIL: hosted a padel game with no padel level';
 exception
   when check_violation then raise notice 'PASS: host must play the sport';
@@ -208,9 +211,9 @@ from public.notifications where kind = 'game_message';
 \echo '── TEST 9: capacity cannot be exceeded ──'
 select pg_temp.become(:'yuki');
 insert into public.games (host_id, venue_id, sport, surface, indoor, starts_at, minutes,
-                          level_min, level_max, spots, price_cents)
+                          level_min, level_max, spots, total_cents)
 values (:'yuki', :'hard_court', 'tennis', 'hard', false, now() + interval '2 days', 60,
-        1, 5, 2, 800)
+        1, 5, 2, 1600)
 returning id as g2 \gset
 select set_config('deuce.g2', :'g2', false);
 
@@ -287,9 +290,9 @@ select pg_temp.become(:'mara');
 do $$
 begin
   insert into public.games (host_id, venue_id, sport, surface, indoor, starts_at, minutes,
-                            level_min, level_max, spots, price_cents)
+                            level_min, level_max, spots, total_cents)
   values (auth.uid(), current_setting('deuce.hard')::uuid, 'tennis', 'hard', false,
-          now() - interval '2 days', 60, 1, 5, 2, 800);
+          now() - interval '2 days', 60, 1, 5, 2, 1600);
   raise exception 'FAIL: posted a game in the past';
 exception
   when check_violation then raise notice 'PASS: past-dated game refused';
@@ -615,7 +618,7 @@ declare g uuid; h uuid;
 begin
   select id, host_id into g, h from public.games where status <> 'cancelled' limit 1;
   if g is null then raise notice 'SKIP: no game'; return; end if;
-  select pg_temp.become(h);
+  perform pg_temp.become(h);
   begin
     perform public.join_waitlist(g);
     raise exception 'FAIL: the host was allowed onto their own waiting list';
@@ -634,5 +637,104 @@ select case when exists (
       and not t.tgisinternal
   ) then 'PASS: a freed seat always runs promotion'
   else 'FAIL: promotion depends on somebody remembering to call it' end;
+
+\echo '── TEST 36: a member cannot promote themselves to moderator ──'
+-- The policy on profiles is `using (id = auth.uid())`, which is the right rule on
+-- ROWS and says nothing about COLUMNS. Until 00021 this one statement, run from the
+-- browser console with the key that ships in the client bundle, handed out every
+-- report, every withdrawal, every logged error and the whole of /numbers.
+do $$
+declare me uuid;
+begin
+  select id into me from public.profiles where not is_moderator limit 1;
+  perform pg_temp.become(me);
+  begin
+    update public.profiles set is_moderator = true where id = me;
+    raise exception 'FAIL: a member made themselves a moderator';
+  exception
+    when insufficient_privilege then
+      raise notice 'PASS: is_moderator is not a column a member may write';
+  end;
+end $$;
+select pg_temp.godmode();
+
+\echo '── TESTS 37-38 setup: a game somebody else has actually joined ──'
+-- Built here rather than borrowed from an earlier test, because by this point in
+-- the suite every game has been cancelled, emptied or deleted. A test that skips
+-- is not a test, and both of the rules below only mean anything when a second
+-- person has committed to the game.
+select pg_temp.godmode();
+select pg_temp.mkuser('frozen.host@studbocconi.it')  as fhost  \gset
+select pg_temp.mkuser('frozen.guest@studbocconi.it') as fguest \gset
+
+update public.profiles set first_name = 'Frozen', last_initial = 'H', tennis_level = 3,
+  onboarded_at = now(), terms_accepted_at = now(), age_confirmed_at = now()
+where id = :'fhost';
+update public.profiles set first_name = 'Frozen', last_initial = 'G', tennis_level = 3,
+  onboarded_at = now(), terms_accepted_at = now(), age_confirmed_at = now()
+where id = :'fguest';
+
+select id as fvenue from public.venues
+where is_active and 'hard'::public.surface = any(surfaces) limit 1 \gset
+
+insert into public.games (host_id, venue_id, sport, surface, indoor, starts_at, minutes,
+                          level_min, level_max, spots, total_cents)
+values (:'fhost', :'fvenue', 'tennis', 'hard', false, now() + interval '5 days', 60,
+        1, 5, 4, 2400)
+returning id as fgame \gset
+select set_config('deuce.fgame', :'fgame', false);
+
+insert into public.game_players (game_id, player_id) values (:'fgame', :'fguest');
+
+\echo '── TEST 37: a seat can only be given up through leave_game ──'
+-- leave_game writes the withdrawals row and THEN frees the seat, in one
+-- transaction. While game_players carried a delete policy there was a second route
+-- that skipped the first half: the seat went, the waiting list backfilled it, the
+-- game still read 4/4, the host was never told, and late_withdrawals stayed clean.
+select pg_temp.become(:'fguest');
+delete from public.game_players where game_id = :'fgame' and player_id = :'fguest';
+select case when exists (
+    select 1 from public.game_players where game_id = :'fgame' and player_id = :'fguest'
+  ) then 'PASS: the seat survives a direct delete'
+  else 'FAIL: a seat was given up with no withdrawal recorded' end;
+select pg_temp.godmode();
+
+\echo '── TEST 38: once somebody joins, the terms they agreed to are fixed ──'
+-- A host could move the price to EUR 399 and the start three days later on a game
+-- other people had joined, in one statement, with nobody told. The note stays
+-- editable and cancelling still works, because cancelling is the honest way out of
+-- a game whose terms no longer hold: it tells everybody.
+select pg_temp.become(:'fhost');
+do $$
+declare g uuid := current_setting('deuce.fgame')::uuid;
+begin
+  begin
+    update public.games set total_cents = 39900 where id = g;
+    raise exception 'FAIL: the price moved under people who had already joined';
+  exception
+    when check_violation then raise notice 'PASS: the price is fixed once somebody joins';
+  end;
+
+  begin
+    update public.games set starts_at = starts_at + interval '3 days' where id = g;
+    raise exception 'FAIL: the start time moved under people who had already joined';
+  exception
+    when check_violation then raise notice 'PASS: the start time is fixed too';
+  end;
+
+  begin
+    update public.games set venue_id = (
+      select id from public.venues where is_active and id <> (
+        select venue_id from public.games where id = g) limit 1)
+    where id = g;
+    raise exception 'FAIL: the court moved under people who had already joined';
+  exception
+    when check_violation then raise notice 'PASS: the court is fixed too';
+  end;
+
+  update public.games set note = 'Bring water, it is warm' where id = g;
+  raise notice 'PASS: the host can still say something to the people coming';
+end $$;
+select pg_temp.godmode();
 
 \echo 'ALL TESTS COMPLETE'
