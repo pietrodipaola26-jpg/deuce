@@ -230,15 +230,25 @@ export function GameThread({
               <label htmlFor={`thread-${gameId}`} className="sr-only">
                 Message the game
               </label>
+              {/*
+                16px, and not a pixel less. iOS Safari zooms the whole viewport
+                in when you focus a field whose font-size is under 16px, and it
+                never zooms back out — so a smaller composer would leave every
+                iPhone reader scaled up and scrolling sideways for the rest of
+                their visit. This was the only typable control in the app below
+                the line; everything else goes through Field. h-11 is 44px, the
+                smallest thing a thumb can be asked to hit, and the Send button
+                is pinned to the same height so the pair still line up.
+              */}
               <input
                 id={`thread-${gameId}`}
                 name="body"
                 maxLength={1000}
                 autoComplete="off"
                 placeholder="Message the game…"
-                className="h-10 flex-1 rounded-full border border-hairline bg-surface px-3.5 text-[0.875rem] text-ink placeholder:text-ink-faint focus:border-court-text"
+                className="h-11 flex-1 rounded-full border border-hairline bg-surface px-3.5 text-base text-ink placeholder:text-ink-faint focus:border-court-text"
               />
-              <Button weight="primary" size="md" type="submit" disabled={pending} className="px-4">
+              <Button weight="primary" size="md" type="submit" disabled={pending} className="h-11 px-4">
                 Send
               </Button>
             </form>
